@@ -1,8 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, desc, eq } from "drizzle-orm";
-import { db } from "../db/client.js";
-import { insurancePlans, medications, formularyEntries } from "../db/schema.js";
+import { createManualPlan, getPlansByIds } from "../db/repositories/insurancePlans.js";
+import { createManualMedication, getMedicationsByIds } from "../db/repositories/medications.js";
+import {
+  upsertEntry,
+  listEntriesForPlan,
+  listRecentEntries,
+  deleteEntry,
+} from "../db/repositories/formularyEntries.js";
 import { requireAuth, requireRole } from "../middleware/requireAuth.js";
 
 const planSchema = z.object({
@@ -32,8 +37,8 @@ const coverageTiers = [
 ] as const;
 
 const formularyEntrySchema = z.object({
-  planId: z.string().uuid(),
-  medicationId: z.string().uuid(),
+  planId: z.string().min(1),
+  medicationId: z.string().min(1),
   tier: z.enum(coverageTiers),
   covered: z.boolean(),
   priorAuthRequired: z.boolean().default(false),
@@ -52,48 +57,44 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.post("/admin/plans", canEdit, async (req, reply) => {
     const body = planSchema.parse(req.body);
-    const [plan] = await db
-      .insert(insurancePlans)
-      .values({ ...body, dataSource: "MANUAL" })
-      .returning();
+    const plan = await createManualPlan(body);
     return reply.code(201).send({ plan });
   });
 
   app.post("/admin/medications", canEdit, async (req, reply) => {
     const body = medicationSchema.parse(req.body);
-    const [medication] = await db.insert(medications).values(body).returning();
+    const medication = await createManualMedication(body);
     return reply.code(201).send({ medication });
   });
 
   app.post("/admin/formulary-entries", canEdit, async (req, reply) => {
     const body = formularyEntrySchema.parse(req.body);
-    const [entry] = await db
-      .insert(formularyEntries)
-      .values({ ...body, dataSource: "MANUAL", sourceUpdatedAt: new Date() })
-      .onConflictDoUpdate({
-        target: [formularyEntries.planId, formularyEntries.medicationId],
-        set: { ...body, dataSource: "MANUAL", sourceUpdatedAt: new Date(), updatedAt: new Date() },
-      })
-      .returning();
+    const entry = await upsertEntry({ ...body, dataSource: "MANUAL", sourceUpdatedAt: new Date() });
     return reply.code(201).send({ entry });
   });
 
   app.get("/admin/formulary-entries", canEdit, async (req) => {
-    const { planId } = z.object({ planId: z.string().uuid().optional() }).parse(req.query);
-    const rows = await db
-      .select({ entry: formularyEntries, medication: medications, plan: insurancePlans })
-      .from(formularyEntries)
-      .innerJoin(medications, eq(formularyEntries.medicationId, medications.id))
-      .innerJoin(insurancePlans, eq(formularyEntries.planId, insurancePlans.id))
-      .where(planId ? eq(formularyEntries.planId, planId) : undefined)
-      .orderBy(desc(formularyEntries.updatedAt))
-      .limit(100);
+    const { planId } = z.object({ planId: z.string().min(1).optional() }).parse(req.query);
+    const entries = planId ? await listEntriesForPlan(planId, 100) : await listRecentEntries(100);
+
+    const [meds, plans] = await Promise.all([
+      getMedicationsByIds(entries.map((e) => e.medicationId)),
+      getPlansByIds(entries.map((e) => e.planId)),
+    ]);
+    const medById = new Map(meds.map((m) => [m.id, m]));
+    const planById = new Map(plans.map((p) => [p.id, p]));
+
+    const rows = entries.map((entry) => ({
+      entry,
+      medication: medById.get(entry.medicationId),
+      plan: planById.get(entry.planId),
+    }));
     return { entries: rows };
   });
 
   app.delete("/admin/formulary-entries/:id", canEdit, async (req) => {
-    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
-    await db.delete(formularyEntries).where(eq(formularyEntries.id, id));
+    const { id } = z.object({ id: z.string().min(1) }).parse(req.params);
+    await deleteEntry(id);
     return { ok: true };
   });
 }

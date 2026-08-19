@@ -28,8 +28,8 @@ export class WenoFormularyProvider implements LiveFormularyProvider {
   }
 
   async checkCoverage(input: {
-    plan: import("../../db/schema.js").InsurancePlan;
-    medication: import("../../db/schema.js").Medication;
+    plan: import("../../db/collections.js").InsurancePlan;
+    medication: import("../../db/collections.js").Medication;
   }): Promise<CoverageResult | null> {
     if (!this.enabled) return null;
 

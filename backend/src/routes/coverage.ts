@@ -1,8 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, eq, ne } from "drizzle-orm";
-import { db } from "../db/client.js";
-import { insurancePlans, medications, formularyEntries, lookupLogs } from "../db/schema.js";
+import { getPlanById } from "../db/repositories/insurancePlans.js";
+import { getMedicationById, getMedicationsByDrugClass } from "../db/repositories/medications.js";
+import {
+  getEntry,
+  upsertEntry,
+  listCoveredEntriesForPlanAmongMedications,
+} from "../db/repositories/formularyEntries.js";
+import { createLookupLog } from "../db/repositories/lookupLogs.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { getEnabledLiveProviders } from "../providers/registry.js";
 import type { CoverageResult } from "../providers/types.js";
@@ -33,24 +38,15 @@ function formatCost(entry: {
 export async function coverageRoutes(app: FastifyInstance) {
   app.get("/coverage/check", { preHandler: requireAuth }, async (req, reply) => {
     const { planId, medicationId } = z
-      .object({ planId: z.string().uuid(), medicationId: z.string().uuid() })
+      .object({ planId: z.string().min(1), medicationId: z.string().min(1) })
       .parse(req.query);
 
-    const [plan] = await db.select().from(insurancePlans).where(eq(insurancePlans.id, planId)).limit(1);
-    const [medication] = await db
-      .select()
-      .from(medications)
-      .where(eq(medications.id, medicationId))
-      .limit(1);
+    const [plan, medication] = await Promise.all([getPlanById(planId), getMedicationById(medicationId)]);
     if (!plan || !medication) {
       return reply.code(404).send({ error: "Plan or medication not found" });
     }
 
-    const [entry] = await db
-      .select()
-      .from(formularyEntries)
-      .where(and(eq(formularyEntries.planId, planId), eq(formularyEntries.medicationId, medicationId)))
-      .limit(1);
+    const entry = await getEntry(planId, medicationId);
 
     let result: CoverageResult;
     if (entry) {
@@ -80,7 +76,7 @@ export async function coverageRoutes(app: FastifyInstance) {
         result = liveResult;
         // Cache it so future lookups for this plan/drug are instant and
         // don't re-spend a live API transaction.
-        await db.insert(formularyEntries).values({
+        await upsertEntry({
           planId,
           medicationId,
           tier: liveResult.tier,
@@ -107,35 +103,29 @@ export async function coverageRoutes(app: FastifyInstance) {
     }
 
     // Covered alternatives: same drug class, actually covered, cheapest
-    // tier first. Only meaningful if we know the drug's class.
+    // tier first. Only meaningful if we know the drug's class. Firestore
+    // has no server-side join, so this narrows by drugClass first (an
+    // indexed lookup on medications), then intersects with this plan's
+    // covered formulary entries for those candidate medication IDs.
     let alternatives: { id: string; name: string; tier: string; estimatedCost: string | null }[] = [];
     if (medication.drugClass) {
-      const altRows = await db
-        .select({ entry: formularyEntries, medication: medications })
-        .from(formularyEntries)
-        .innerJoin(medications, eq(formularyEntries.medicationId, medications.id))
-        .where(
-          and(
-            eq(formularyEntries.planId, planId),
-            eq(formularyEntries.covered, true),
-            ne(formularyEntries.medicationId, medicationId),
-            eq(medications.drugClass, medication.drugClass)
-          )
-        )
-        .limit(10);
+      const candidates = await getMedicationsByDrugClass(medication.drugClass);
+      const candidateIds = candidates.filter((m) => m.id !== medicationId).map((m) => m.id);
+      const entries = await listCoveredEntriesForPlanAmongMedications(planId, candidateIds);
+      const medById = new Map(candidates.map((m) => [m.id, m]));
 
-      alternatives = altRows
-        .sort((a, b) => tierRank[a.entry.tier] - tierRank[b.entry.tier])
+      alternatives = entries
+        .sort((a, b) => tierRank[a.tier] - tierRank[b.tier])
         .slice(0, 5)
-        .map((row) => ({
-          id: row.medication.id,
-          name: row.medication.name,
-          tier: row.entry.tier,
-          estimatedCost: formatCost(row.entry),
+        .map((e) => ({
+          id: e.medicationId,
+          name: medById.get(e.medicationId)!.name,
+          tier: e.tier,
+          estimatedCost: formatCost(e),
         }));
     }
 
-    await db.insert(lookupLogs).values({
+    await createLookupLog({
       userId: req.authedUser!.id,
       medicationQuery: medication.name,
       planId,

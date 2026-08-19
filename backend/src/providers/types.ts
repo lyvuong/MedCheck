@@ -1,4 +1,4 @@
-import type { InsurancePlan, Medication, CoverageTier } from "../db/schema.js";
+import type { InsurancePlan, Medication, CoverageTier } from "../db/collections.js";
 
 /**
  * A CoverageResult is the normalized shape every data source (manual entry,

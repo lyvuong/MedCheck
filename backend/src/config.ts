@@ -15,4 +15,8 @@ export const config = {
   corsOrigin: process.env.CORS_ORIGIN ?? "*",
   bootstrapAdminEmail: process.env.BOOTSTRAP_ADMIN_EMAIL,
   bootstrapAdminPassword: process.env.BOOTSTRAP_ADMIN_PASSWORD,
+  // Path to a mounted Firebase service-account JSON file. Falls back to
+  // applicationDefault() (e.g. ambient Cloud Run credentials) when unset.
+  googleApplicationCredentials: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+  firestoreProjectId: process.env.FIRESTORE_PROJECT_ID,
 };

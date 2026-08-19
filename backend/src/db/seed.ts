@@ -1,15 +1,17 @@
 /**
  * Seeds realistic sample data so the app is usable immediately, without
  * waiting on a CMS import or Weno credentials. Structured the same way
- * real imported data would be (same tables/fields), so swapping in real
- * data later is additive, not a rebuild.
+ * real imported data would be (same fields), so swapping in real data
+ * later is additive, not a rebuild.
  *
  * Run with: npm run seed
  */
-import { and, eq } from "drizzle-orm";
-import { db, pool } from "./client.js";
-import { users, insurancePlans, medications, formularyEntries, type CoverageTier } from "./schema.js";
+import { findUserByEmail, createUser } from "./repositories/users.js";
+import { findPlanByExactName, createManualPlan } from "./repositories/insurancePlans.js";
+import { createManualMedication } from "./repositories/medications.js";
+import { upsertEntry } from "./repositories/formularyEntries.js";
 import { hashPassword } from "../auth/password.js";
+import type { CoverageTier, InsurancePlan, Medication } from "./collections.js";
 
 async function main() {
   console.log("Seeding users...");
@@ -19,9 +21,9 @@ async function main() {
     { email: "staff@example.com", name: "Sam Staff", role: "STAFF" as const, password: "ChangeMe123!" },
   ];
   for (const u of seedUsers) {
-    const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, u.email)).limit(1);
+    const existing = await findUserByEmail(u.email);
     if (existing) continue;
-    await db.insert(users).values({
+    await createUser({
       email: u.email,
       name: u.name,
       role: u.role,
@@ -37,22 +39,14 @@ async function main() {
     { payerName: "Cigna", planName: "Cigna Connect Marketplace", planType: "ACA Marketplace", state: "NJ" },
     { payerName: "Blue Cross Blue Shield", planName: "BCBS HMO Basic", planType: "HMO", state: "NY" },
   ];
-  const planRecords: (typeof insurancePlans.$inferSelect)[] = [];
+  const planRecords: InsurancePlan[] = [];
   for (const p of planDefs) {
-    const [existing] = await db
-      .select()
-      .from(insurancePlans)
-      .where(eq(insurancePlans.planName, p.planName))
-      .limit(1);
+    const existing = await findPlanByExactName(p.planName);
     if (existing) {
       planRecords.push(existing);
       continue;
     }
-    const [rec] = await db
-      .insert(insurancePlans)
-      .values({ ...p, dataSource: "MANUAL" })
-      .returning();
-    planRecords.push(rec);
+    planRecords.push(await createManualPlan(p));
   }
 
   console.log("Seeding medications...");
@@ -75,16 +69,10 @@ async function main() {
     { name: "Eliquis", genericName: "apixaban", drugClass: "Anticoagulant", strength: "5mg", form: "tablet" },
     { name: "Warfarin", genericName: "warfarin", drugClass: "Anticoagulant", strength: "5mg", form: "tablet" },
   ];
-  const medRecords: (typeof medications.$inferSelect)[] = [];
+  const medRecords: Medication[] = [];
   for (const m of medicationDefs) {
     const ndc = `SAMPLE-${m.genericName}`;
-    const [existing] = await db.select().from(medications).where(eq(medications.ndc, ndc)).limit(1);
-    if (existing) {
-      medRecords.push(existing);
-      continue;
-    }
-    const [rec] = await db.insert(medications).values({ ...m, ndc }).returning();
-    medRecords.push(rec);
+    medRecords.push(await createManualMedication({ ...m, ndc }));
   }
 
   console.log("Seeding formulary entries...");
@@ -151,14 +139,7 @@ async function main() {
     for (const r of planRules) {
       const med = byGeneric(r.drug);
       if (!med) continue;
-      const [existing] = await db
-        .select({ id: formularyEntries.id })
-        .from(formularyEntries)
-        .where(and(eq(formularyEntries.planId, plan.id), eq(formularyEntries.medicationId, med.id)))
-        .limit(1);
-      if (existing) continue;
-
-      await db.insert(formularyEntries).values({
+      await upsertEntry({
         planId: plan.id,
         medicationId: med.id,
         tier: r.tier,
@@ -177,11 +158,10 @@ async function main() {
   console.log("Seed complete.");
   console.log("Sample logins (change these passwords after first login):");
   for (const u of seedUsers) console.log(`  ${u.role.padEnd(6)} ${u.email} / ${u.password}`);
-  await pool.end();
+  process.exit(0);
 }
 
-main().catch(async (e) => {
+main().catch((e) => {
   console.error(e);
-  await pool.end();
   process.exit(1);
 });

@@ -7,8 +7,7 @@ import { medicationRoutes } from "./routes/medications.js";
 import { planRoutes } from "./routes/plans.js";
 import { coverageRoutes } from "./routes/coverage.js";
 import { adminRoutes } from "./routes/admin.js";
-import { db } from "./db/client.js";
-import { users } from "./db/schema.js";
+import { countUsers, createUser } from "./db/repositories/users.js";
 import { hashPassword } from "./auth/password.js";
 
 const app = Fastify({ logger: true });
@@ -28,15 +27,15 @@ await app.register(adminRoutes);
 // BOOTSTRAP_ADMIN_EMAIL/PASSWORD are set, create the first admin account
 // so there's a way to log in at all on a fresh self-hosted install.
 async function bootstrapAdmin() {
-  const existing = await db.select({ id: users.id }).from(users).limit(1);
-  if (existing.length > 0) return;
+  const existing = await countUsers();
+  if (existing > 0) return;
   if (!config.bootstrapAdminEmail || !config.bootstrapAdminPassword) {
     app.log.warn(
       "No users exist and BOOTSTRAP_ADMIN_EMAIL/BOOTSTRAP_ADMIN_PASSWORD are not set — set them in .env and restart, or run the seed script, to create a login."
     );
     return;
   }
-  await db.insert(users).values({
+  await createUser({
     email: config.bootstrapAdminEmail,
     name: "Admin",
     role: "ADMIN",
