@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-medcheck}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-medcheck}
+      POSTGRES_DB: ${POSTGRES_DB:-medcheck}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-medcheck}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-medcheck}:${POSTGRES_PASSWORD:-medcheck}@db:5432/${POSTGRES_DB:-medcheck}
+      JWT_SECRET: ${JWT_SECRET:?set a long random JWT_SECRET in .env}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      WENO_API_BASE_URL: ${WENO_API_BASE_URL:-}
+      WENO_API_KEY: ${WENO_API_KEY:-}
+      PORT: 4000
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+
+volumes:
+  db-data:
