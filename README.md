@@ -16,6 +16,8 @@ Designed to operate **100% on free tiers** (Firebase Spark Plan + Cloudflare Pag
 
 ## 📑 Table of Contents
 
+- [Why Clinicians Need MedCheck](#-why-clinicians-need-medcheck-the-shifting-formulary-reality)
+- [Healthcare & Insurance Terminology Guide](#-healthcare--insurance-terminology-guide)
 - [Key Features](#-key-features)
 - [System Architecture](#-system-architecture)
 - [Why "Pluggable" Data Sources?](#-why-pluggable-data-sources)
@@ -38,6 +40,61 @@ Designed to operate **100% on free tiers** (Firebase Spark Plan + Cloudflare Pag
 - [Deployment Guide (Cloudflare)](#-deployment-guide-cloudflare)
 - [Project Directory Structure](#-project-directory-structure)
 - [License](#-license)
+
+---
+
+## 🩺 Why Clinicians Need MedCheck: The Shifting Formulary Reality
+
+In modern clinical practice, prescribing the right medication is only half the battle — ensuring the patient can actually obtain and afford it is often the harder challenge.
+
+### 1. 🔄 Constantly Shifting Insurance Policies & Formulary Churn
+Commercial health insurers and Pharmacy Benefit Managers (PBMs) alter their drug coverage rules, tiers, and exclusion lists **multiple times per year** (often quarterly or mid-cycle).
+- A maintenance drug covered with a modest $15 copay in January can abruptly be reclassified to a Tier 4/5 specialty tier or dropped altogether in June.
+- Insurers frequently substitute preferred brands (e.g., switching preferred GLP-1 agonists, inhalers, or statins) based on renegotiated rebate contracts, leaving prescribers in the dark until claims fail at the pharmacy.
+
+### 2. 📉 Preventing "Copay Shock" and Prescription Abandonment
+High out-of-pocket costs are the **#1 cause of prescription abandonment**.
+- Studies show that when a patient's out-of-pocket medication cost exceeds $50, abandonment rates jump to over **30%** (and over **50%** when costs exceed $100).
+- When a patient discovers an unaffordable copay at the pharmacy counter, they frequently leave empty-handed without notifying their physician, leading to unmanaged chronic diseases, complications, and hospital readmissions.
+- MedCheck gives physicians visibility into estimated tier costs **during the consultation**, enabling shared decision-making before the patient leaves the clinic.
+
+### 3. 🛑 Eliminating the "Pharmacy Callback & Fax" Spiral
+Without point-of-care coverage visibility, clinics suffer from relentless administrative friction:
+```text
+Doctor Prescribes Drug ➔ Patient Goes to Pharmacy ➔ Claim Rejected (Non-Covered or PA Required)
+       ▲                                                                   │
+       └──────── Pharmacy Faxes / Calls Clinic ◄── Nurse Retriages ────────┘
+```
+This loop drains hours of staff, nurse, and physician time every week on retroactive prior authorizations, chart reviews, and re-prescribing. MedCheck prevents this bottleneck at the source.
+
+### 4. ⚡ Navigating Prior Authorization (PA) & Step Therapy ("Fail First")
+Insurers increasingly deploy **Utilization Management Controls** to contain costs:
+- **Prior Authorization (PA)**: Demands extensive diagnostic paperwork before covering a drug.
+- **Step Therapy (ST)**: Requires patients to try and "fail" one or more older, cheaper medications before approving the prescribed treatment.
+- **Quantity Limits (QL)**: Caps pill counts or days-of-supply per refill.
+MedCheck flags these restrictions upfront, allowing doctors to select an already-approved therapeutic alternative or initiate documentation immediately.
+
+### 5. 💡 Free, Lightweight Independence from Monopolized EHR Modules
+Commercial Real-Time Prescription Benefit (RTPB) add-ons in enterprise EHRs are often expensive, locked behind multi-year contracts, or cumbersome to use. MedCheck is a fast, free, standalone PWA that any clinician or medical assistant can pull up on a phone, tablet, or secondary screen in seconds.
+
+---
+
+## 📚 Healthcare & Insurance Terminology Guide
+
+For developers and contributors new to healthcare technology, here is a quick plain-English glossary of terms used throughout this project:
+
+| Term | What It Means | Why It Matters in MedCheck |
+| :--- | :--- | :--- |
+| **Formulary** | The official master list of prescription drugs covered by an insurance plan. | The core dataset queried during every coverage lookup. |
+| **Formulary Tiers** | Pricing categories that dictate patient out-of-pocket cost: <br>• **Tier 1 (Preferred Generic)**: Lowest copay (e.g., $5–$10). <br>• **Tier 2 (Generic)**: Low copay (e.g., $10–$20). <br>• **Tier 3 (Preferred Brand)**: Moderate copay (e.g., $40–$60). <br>• **Tier 4 (Non-Preferred Drug)**: High cost brand/generic. <br>• **Tier 5 (Specialty)**: High-cost biologics/complex drugs. | Displayed as clear visual badges so clinicians can gauge patient affordability immediately. |
+| **Copay vs. Coinsurance** | • **Copay**: A fixed flat fee per refill (e.g., $15). <br>• **Coinsurance**: A percentage of the drug's retail price (e.g., 20% of a $1,200 drug = $240). | Surfaced in the estimated cost field so patients aren't caught off-guard by percentage-based bills. |
+| **Prior Authorization (`PA`)** | A requirement where the insurer must review medical records and approve clinical necessity *before* paying for the drug. | Flagged as a warning badge so staff can initiate paperwork proactively instead of reacting to rejections. |
+| **Step Therapy (`ST`)** | A "fail first" rule requiring the patient to try cheaper/older medications first before the insurer covers the prescribed drug. | Notified upfront to help doctors decide whether to prescribe step-1 drugs or submit an override request. |
+| **Quantity Limit (`QL`)** | Restrictions on the maximum dose, pill count, or days of supply per fill (e.g., "30 tablets per 30 days"). | Informs dosing decisions and refill intervals. |
+| **PBM (Pharmacy Benefit Manager)** | Third-party administrators (e.g., CVS Caremark, Express Scripts, OptumRx) that manage drug plans for insurers. | Responsible for frequent tier changes and rebate-driven drug exclusions. |
+| **NDC (National Drug Code)** | A unique 10- or 11-digit universal product identifier for medications in the United States (like a barcode). | Used as unique identifiers in the database and during CMS CSV bulk imports. |
+| **CMS PUF** | **Centers for Medicare & Medicaid Services Public Use Files** — open government datasets detailing Medicare Part D & ACA coverage. | Powers MedCheck's automated bulk data ingestion pipeline (`scripts/src/providers/cms/`). |
+| **RTPB** | **Real-Time Prescription Benefit** — electronic protocols that check patient coverage live during the prescribing workflow. | MedCheck provides a zero-cost, open, serverless alternative to commercial RTPB networks. |
 
 ---
 
