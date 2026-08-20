@@ -1,5 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, type AuthedUser } from "../api";
+import { createManualPlan } from "../data/insurancePlans";
+import { createManualMedication } from "../data/medications";
+import { upsertEntry } from "../data/formularyEntries";
+import { listUserRoleDocs, setUserRole, setUserActive } from "../data/users";
+import type { UserRole, UserRoleDoc } from "../data/types";
 
 const TIERS = [
   "TIER_1_PREFERRED_GENERIC",
@@ -30,12 +34,12 @@ export function Admin() {
 }
 
 function UsersPanel() {
-  const [users, setUsers] = useState<(AuthedUser & { active: boolean })[]>([]);
-  const [form, setForm] = useState({ email: "", password: "", name: "", role: "STAFF" });
+  const [users, setUsers] = useState<UserRoleDoc[]>([]);
+  const [form, setForm] = useState({ email: "", name: "", role: "STAFF" as UserRole });
   const [message, setMessage] = useState<string | null>(null);
 
   function refresh() {
-    api.listUsers().then((r) => setUsers(r.users));
+    listUserRoleDocs().then(setUsers);
   }
   useEffect(refresh, []);
 
@@ -43,25 +47,29 @@ function UsersPanel() {
     e.preventDefault();
     setMessage(null);
     try {
-      await api.createUser(form);
-      setForm({ email: "", password: "", name: "", role: "STAFF" });
-      setMessage(`Created ${form.email}`);
+      await setUserRole(form.email, form.role, form.name);
+      setForm({ email: "", name: "", role: "STAFF" });
+      setMessage(`Granted ${form.role} access to ${form.email}`);
       refresh();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Failed to create user");
+      setMessage(err instanceof Error ? err.message : "Failed to grant access");
     }
   }
 
   return (
     <div className="admin-grid">
       <form className="card" onSubmit={onSubmit}>
-        <h3>Add user</h3>
+        <h3>Grant access</h3>
+        <p className="muted">
+          The person still needs to sign in with this Google account themselves — this only decides what they can
+          see once they do.
+        </p>
         <label>
           Name
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
         </label>
         <label>
-          Email
+          Google account email
           <input
             type="email"
             value={form.email}
@@ -70,24 +78,14 @@ function UsersPanel() {
           />
         </label>
         <label>
-          Temporary password
-          <input
-            type="text"
-            minLength={8}
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            required
-          />
-        </label>
-        <label>
           Role
-          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}>
             <option value="DOCTOR">Doctor</option>
             <option value="STAFF">Staff</option>
             <option value="ADMIN">Admin</option>
           </select>
         </label>
-        <button type="submit">Create account</button>
+        <button type="submit">Grant access</button>
         {message && <p className="muted">{message}</p>}
       </form>
 
@@ -105,7 +103,7 @@ function UsersPanel() {
           </thead>
           <tbody>
             {users.map((u) => (
-              <tr key={u.id}>
+              <tr key={u.email}>
                 <td>{u.name}</td>
                 <td>{u.email}</td>
                 <td>{u.role}</td>
@@ -113,7 +111,7 @@ function UsersPanel() {
                 <td>
                   <button
                     className="link-button"
-                    onClick={() => api.setUserActive(u.id, !u.active).then(refresh)}
+                    onClick={() => setUserActive(u.email, !u.active).then(refresh)}
                   >
                     {u.active ? "Disable" : "Enable"}
                   </button>
@@ -144,21 +142,21 @@ function FormularyPanel() {
 
   async function submitPlan(e: FormEvent) {
     e.preventDefault();
-    const { plan } = await api.createPlan(planForm);
+    const plan = await createManualPlan(planForm);
     setMessage(`Created plan "${plan.planName}" (id: ${plan.id})`);
     setPlanForm({ payerName: "", planName: "", planType: "", state: "" });
   }
 
   async function submitMed(e: FormEvent) {
     e.preventDefault();
-    const { medication } = await api.createMedication(medForm);
+    const medication = await createManualMedication(medForm);
     setMessage(`Created medication "${medication.name}" (id: ${medication.id})`);
     setMedForm({ name: "", genericName: "", drugClass: "", strength: "", form: "" });
   }
 
   async function submitEntry(e: FormEvent) {
     e.preventDefault();
-    await api.upsertFormularyEntry({
+    await upsertEntry({
       ...entryForm,
       estimatedCopayCents: entryForm.estimatedCopayCents
         ? Math.round(Number(entryForm.estimatedCopayCents) * 100)

@@ -1,16 +1,17 @@
-import { lookupLogsCol } from "../collections.js";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase";
 
 export async function createLookupLog(input: {
-  userId: string;
+  userEmail: string;
   medicationQuery: string;
   planId?: string;
   resultSummary?: string;
 }): Promise<void> {
-  await lookupLogsCol.add({
-    userId: input.userId,
+  await addDoc(collection(db, "lookupLogs"), {
+    userId: input.userEmail,
     medicationQuery: input.medicationQuery,
     planId: input.planId ?? null,
     resultSummary: input.resultSummary ?? null,
-    createdAt: new Date(),
+    createdAt: serverTimestamp(),
   });
 }

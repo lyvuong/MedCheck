@@ -1,0 +1,20 @@
+{
+  "name": "medcheck-scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local admin tooling (Firestore seed data, CMS bulk import) — run by hand with a Firebase service-account key. Not deployed anywhere.",
+  "scripts": {
+    "seed": "tsx src/db/seed.ts",
+    "import:cms": "tsx src/providers/cms/importCli.ts"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.3.0",
+    "csv-parse": "^5.5.6"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2",
+    "@types/node": "^22.7.4"
+  }
+}

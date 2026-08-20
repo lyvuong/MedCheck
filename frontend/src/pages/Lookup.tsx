@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { api, type CoverageCheckResult, type InsurancePlan, type Medication } from "../api";
+import { useAuth } from "../AuthContext";
+import { searchMedications } from "../data/medications";
+import { searchPlans } from "../data/insurancePlans";
+import { checkCoverage } from "../data/coverage";
+import type { CoverageCheckResult, InsurancePlan, Medication } from "../data/types";
 
 const TIER_LABELS: Record<string, string> = {
   TIER_1_PREFERRED_GENERIC: "Tier 1 — Preferred generic",
@@ -14,7 +18,6 @@ const TIER_LABELS: Record<string, string> = {
 const SOURCE_LABELS: Record<string, string> = {
   MANUAL: "Manually entered",
   CMS_PUF: "CMS public formulary data",
-  WENO: "Weno Exchange (live)",
 };
 
 function useDebouncedSearch<T>(
@@ -47,6 +50,7 @@ function useDebouncedSearch<T>(
 }
 
 export function Lookup() {
+  const { user } = useAuth();
   const [medQuery, setMedQuery] = useState("");
   const [planQuery, setPlanQuery] = useState("");
   const [selectedMed, setSelectedMed] = useState<Medication | null>(null);
@@ -55,15 +59,15 @@ export function Lookup() {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const medResults = useDebouncedSearch(medQuery, (q) => api.searchMedications(q).then((r) => r.medications));
-  const planResults = useDebouncedSearch(planQuery, (q) => api.searchPlans(q).then((r) => r.plans));
+  const medResults = useDebouncedSearch(medQuery, searchMedications);
+  const planResults = useDebouncedSearch(planQuery, searchPlans);
 
   async function runCheck(med: Medication, plan: InsurancePlan) {
     setChecking(true);
     setError(null);
     setResult(null);
     try {
-      const res = await api.checkCoverage(plan.id, med.id);
+      const res = await checkCoverage(plan.id, med.id, user!.email);
       setResult(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Lookup failed");

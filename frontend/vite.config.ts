@@ -24,38 +24,12 @@ export default defineConfig({
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
-      workbox: {
-        // Never cache API calls offline — coverage data must always be
-        // fresh; only the app shell is cached for installability/offline
-        // launch.
-        navigateFallbackDenylist: [/^\/(auth|medications|plans|coverage|admin)\//],
-        runtimeCaching: [
-          {
-            urlPattern: /^\/(auth|medications|plans|coverage|admin)\//,
-            handler: "NetworkOnly",
-          },
-        ],
-      },
     }),
   ],
   server: {
     port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://localhost:4000",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
-      },
-    },
   },
   preview: {
     port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://localhost:4000",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
-      },
-    },
   },
 });

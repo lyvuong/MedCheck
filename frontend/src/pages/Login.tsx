@@ -1,60 +1,54 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
-import { ApiError } from "../api";
 
 export function Login() {
-  const { login } = useAuth();
+  const { user, noAccess, login, logout } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    if (user) navigate("/");
+  }, [user, navigate]);
+
+  async function onClick() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password);
-      navigate("/");
+      await login();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : "Sign-in failed");
     } finally {
       setSubmitting(false);
     }
   }
 
+  if (noAccess) {
+    return (
+      <div className="centered-page">
+        <div className="card login-card">
+          <h1>MedCheck</h1>
+          <p className="subtitle">You're signed in, but don't have access yet.</p>
+          <p className="muted">Ask the admin to grant your account access, then try again.</p>
+          <button className="link-button" onClick={logout}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="centered-page">
-      <form className="card login-card" onSubmit={onSubmit}>
+      <div className="card login-card">
         <h1>MedCheck</h1>
         <p className="subtitle">Medication coverage lookup</p>
-        <label>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="username"
-            required
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </label>
         {error && <div className="error">{error}</div>}
-        <button type="submit" disabled={submitting}>
-          {submitting ? "Signing in…" : "Sign in"}
+        <button onClick={onClick} disabled={submitting}>
+          {submitting ? "Signing in…" : "Sign in with Google"}
         </button>
-      </form>
+      </div>
     </div>
   );
 }

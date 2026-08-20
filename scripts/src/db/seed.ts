@@ -1,36 +1,22 @@
 /**
  * Seeds realistic sample data so the app is usable immediately, without
- * waiting on a CMS import or Weno credentials. Structured the same way
- * real imported data would be (same fields), so swapping in real data
- * later is additive, not a rebuild.
+ * waiting on a CMS import. Structured the same way real imported data
+ * would be (same fields), so swapping in real data later is additive,
+ * not a rebuild.
+ *
+ * User accounts aren't seeded here — auth is Google Sign-In only, and
+ * roles are assigned by creating a `users/{email}` doc by hand in the
+ * Firebase console (or via the app's Admin > Users panel once you're
+ * signed in as the owner).
  *
  * Run with: npm run seed
  */
-import { findUserByEmail, createUser } from "./repositories/users.js";
 import { findPlanByExactName, createManualPlan } from "./repositories/insurancePlans.js";
 import { createManualMedication } from "./repositories/medications.js";
 import { upsertEntry } from "./repositories/formularyEntries.js";
-import { hashPassword } from "../auth/password.js";
 import type { CoverageTier, InsurancePlan, Medication } from "./collections.js";
 
 async function main() {
-  console.log("Seeding users...");
-  const seedUsers = [
-    { email: "admin@example.com", name: "Ada Admin", role: "ADMIN" as const, password: "ChangeMe123!" },
-    { email: "doctor@example.com", name: "Dr. Devon Osei", role: "DOCTOR" as const, password: "ChangeMe123!" },
-    { email: "staff@example.com", name: "Sam Staff", role: "STAFF" as const, password: "ChangeMe123!" },
-  ];
-  for (const u of seedUsers) {
-    const existing = await findUserByEmail(u.email);
-    if (existing) continue;
-    await createUser({
-      email: u.email,
-      name: u.name,
-      role: u.role,
-      passwordHash: await hashPassword(u.password),
-    });
-  }
-
   console.log("Seeding insurance plans...");
   const planDefs = [
     { payerName: "Aetna", planName: "Aetna Better Health PPO", planType: "PPO", state: "NY" },
@@ -156,8 +142,6 @@ async function main() {
   }
 
   console.log("Seed complete.");
-  console.log("Sample logins (change these passwords after first login):");
-  for (const u of seedUsers) console.log(`  ${u.role.padEnd(6)} ${u.email} / ${u.password}`);
   process.exit(0);
 }
 

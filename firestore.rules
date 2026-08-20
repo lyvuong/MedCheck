@@ -1,14 +1,52 @@
 rules_version = '2';
 
-// Only the backend (Firebase Admin SDK, running server-side with a
-// service-account credential) ever touches Firestore — the frontend
-// always goes through the Fastify REST API, never directly to Firestore.
-// The Admin SDK bypasses these rules entirely, so denying all client
-// access here just closes off any accidental/future direct client access.
+// No server touches Firestore anymore — the React PWA calls it directly
+// via the Firebase client SDK, so these rules are the only access
+// control layer. The owner/admin identity is hardcoded (either Google
+// account below always has full access); everyone else needs a
+// users/{email} doc, created by hand in the Firebase console, to get any
+// access at all.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    function isOwner() {
+      return request.auth != null &&
+        request.auth.token.email in ['lyvuong@gmail.com', 'lyvuong@lv5.org'];
+    }
+    function hasRoleDoc() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.token.email));
+    }
+    function roleDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.token.email)).data;
+    }
+    function isKnownActiveUser() {
+      return request.auth != null &&
+        (isOwner() || (hasRoleDoc() && roleDoc().active == true));
+    }
+    function isStaffOrAdmin() {
+      return isOwner() ||
+        (hasRoleDoc() && roleDoc().active == true && roleDoc().role in ['ADMIN', 'STAFF']);
+    }
+
+    match /users/{email} {
+      allow get: if request.auth != null && (isOwner() || request.auth.token.email == email);
+      allow list: if isOwner();
+      allow write: if isOwner();
+    }
+    match /insurancePlans/{id} {
+      allow read: if isKnownActiveUser();
+      allow write: if isStaffOrAdmin();
+    }
+    match /medications/{id} {
+      allow read: if isKnownActiveUser();
+      allow write: if isStaffOrAdmin();
+    }
+    match /formularyEntries/{id} {
+      allow read: if isKnownActiveUser();
+      allow write: if isStaffOrAdmin();
+    }
+    match /lookupLogs/{id} {
+      allow create: if isKnownActiveUser();
+      allow read, update, delete: if isOwner();
     }
   }
 }
