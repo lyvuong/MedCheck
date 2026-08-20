@@ -6,13 +6,13 @@ import { listUserRoleDocs, setUserRole, setUserActive } from "../data/users";
 import type { UserRole, UserRoleDoc } from "../data/types";
 
 const TIERS = [
-  "TIER_1_PREFERRED_GENERIC",
-  "TIER_2_GENERIC",
-  "TIER_3_PREFERRED_BRAND",
-  "TIER_4_NON_PREFERRED_DRUG",
-  "TIER_5_SPECIALTY",
-  "NOT_COVERED",
-  "UNKNOWN",
+  { key: "TIER_1_PREFERRED_GENERIC", label: "Tier 1 — Preferred Generic (Lowest Copay)" },
+  { key: "TIER_2_GENERIC", label: "Tier 2 — Generic / Preferred Brand" },
+  { key: "TIER_3_PREFERRED_BRAND", label: "Tier 3 — Non-Preferred Brand" },
+  { key: "TIER_4_NON_PREFERRED_DRUG", label: "Tier 4 — Non-Preferred / High Cost" },
+  { key: "TIER_5_SPECIALTY", label: "Tier 5 — Specialty Biologics (High Coinsurance)" },
+  { key: "NOT_COVERED", label: "Not Covered (100% Patient Out-of-Pocket)" },
+  { key: "UNKNOWN", label: "Unknown / Unclassified" },
 ];
 
 export function Admin() {
@@ -231,19 +231,22 @@ function FormularyPanel() {
     quantityLimit: "",
     estimatedCopayCents: "",
   });
-  const [message, setMessage] = useState<string | null>(null);
+
+  const [planSuccess, setPlanSuccess] = useState<{ name: string; id: string } | null>(null);
+  const [medSuccess, setMedSuccess] = useState<{ name: string; id: string } | null>(null);
+  const [entrySuccess, setEntrySuccess] = useState<string | null>(null);
 
   async function submitPlan(e: FormEvent) {
     e.preventDefault();
     const plan = await createManualPlan(planForm);
-    setMessage(`Created plan "${plan.planName}" (id: ${plan.id})`);
+    setPlanSuccess({ name: plan.planName, id: plan.id });
     setPlanForm({ payerName: "", planName: "", planType: "", state: "" });
   }
 
   async function submitMed(e: FormEvent) {
     e.preventDefault();
     const medication = await createManualMedication(medForm);
-    setMessage(`Created medication "${medication.name}" (id: ${medication.id})`);
+    setMedSuccess({ name: medication.name, id: medication.id });
     setMedForm({ name: "", genericName: "", drugClass: "", strength: "", form: "" });
   }
 
@@ -255,165 +258,298 @@ function FormularyPanel() {
         ? Math.round(Number(entryForm.estimatedCopayCents) * 100)
         : undefined,
     });
-    setMessage("Formulary entry saved");
+    setEntrySuccess(`Saved formulary rule linking Plan [${entryForm.planId}] & Medication [${entryForm.medicationId}]`);
   }
 
   return (
     <div className="formulary-management-grid">
-      <div className="formulary-sub-row">
-        <form className="card" onSubmit={submitPlan}>
-          <h3>➕ Add Insurance Plan</h3>
-          <label>
-            <span>Payer Name</span>
-            <input
-              placeholder="e.g. Aetna, Blue Cross"
-              value={planForm.payerName}
-              onChange={(e) => setPlanForm({ ...planForm, payerName: e.target.value })}
-              required
-            />
-          </label>
-          <label>
-            <span>Plan Name</span>
-            <input
-              placeholder="e.g. Choice POS II"
-              value={planForm.planName}
-              onChange={(e) => setPlanForm({ ...planForm, planName: e.target.value })}
-              required
-            />
-          </label>
-          <label>
-            <span>Plan Type</span>
-            <input
-              placeholder="e.g. HMO, PPO, Part D"
-              value={planForm.planType}
-              onChange={(e) => setPlanForm({ ...planForm, planType: e.target.value })}
-            />
-          </label>
-          <button type="submit" className="primary-button" style={{ width: "100%", marginTop: "0.5rem" }}>
-            Add Plan
-          </button>
-        </form>
-
-        <form className="card" onSubmit={submitMed}>
-          <h3>➕ Add Medication</h3>
-          <label>
-            <span>Medication Brand / Name</span>
-            <input
-              placeholder="e.g. Lipitor 20mg Tablet"
-              value={medForm.name}
-              onChange={(e) => setMedForm({ ...medForm, name: e.target.value })}
-              required
-            />
-          </label>
-          <label>
-            <span>Therapeutic Drug Class</span>
-            <input
-              value={medForm.drugClass}
-              onChange={(e) => setMedForm({ ...medForm, drugClass: e.target.value })}
-              placeholder="e.g. Statin — for alternative search"
-            />
-          </label>
-          <label>
-            <span>Strength & Dosage Form</span>
-            <input
-              placeholder="e.g. 20mg Oral Tablet"
-              value={medForm.strength}
-              onChange={(e) => setMedForm({ ...medForm, strength: e.target.value })}
-            />
-          </label>
-          <button type="submit" className="primary-button" style={{ width: "100%", marginTop: "0.5rem" }}>
-            Add Medication
-          </button>
-        </form>
+      {/* Workflow Step Indicator */}
+      <div className="card formulary-pipeline-card">
+        <div className="pipeline-header">
+          <span className="pipeline-badge">3-Step Workflow</span>
+          <h3>Manual Formulary Entry Pipeline</h3>
+        </div>
+        <div className="pipeline-steps">
+          <div className="pipeline-step">
+            <span className="step-num">1</span>
+            <div className="step-info">
+              <strong>Register Insurance Plan</strong>
+              <p>Add payer and plan details to get a Plan ID</p>
+            </div>
+          </div>
+          <div className="step-connector">➔</div>
+          <div className="pipeline-step">
+            <span className="step-num">2</span>
+            <div className="step-info">
+              <strong>Register Medication</strong>
+              <p>Add brand name, strength, and therapeutic class</p>
+            </div>
+          </div>
+          <div className="step-connector">➔</div>
+          <div className="pipeline-step">
+            <span className="step-num">3</span>
+            <div className="step-info">
+              <strong>Link Formulary Rule</strong>
+              <p>Set tier, copay, and PA/ST policy flags</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <form className="card" onSubmit={submitEntry}>
-        <h3>🔗 Link Formulary Rule</h3>
-        <p className="muted" style={{ fontSize: "0.85rem", marginTop: "0" }}>
-          Requires the Plan ID and Medication ID from above.
-        </p>
-
-        <div className="formulary-inputs-grid">
-          <label>
-            <span>Plan ID</span>
-            <input
-              placeholder="Paste generated plan ID"
-              value={entryForm.planId}
-              onChange={(e) => setEntryForm({ ...entryForm, planId: e.target.value })}
-              required
-            />
-          </label>
-          <label>
-            <span>Medication ID</span>
-            <input
-              placeholder="Paste generated medication ID"
-              value={entryForm.medicationId}
-              onChange={(e) => setEntryForm({ ...entryForm, medicationId: e.target.value })}
-              required
-            />
-          </label>
-          <label>
-            <span>Formulary Tier</span>
-            <select
-              value={entryForm.tier}
-              onChange={(e) => setEntryForm({ ...entryForm, tier: e.target.value })}
-            >
-              {TIERS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Estimated Copay ($)</span>
-            <input
-              type="number"
-              step="0.01"
-              placeholder="e.g. 15.00"
-              value={entryForm.estimatedCopayCents}
-              onChange={(e) => setEntryForm({ ...entryForm, estimatedCopayCents: e.target.value })}
-            />
-          </label>
-        </div>
-
-        <div className="formulary-checkboxes-row">
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={entryForm.covered}
-              onChange={(e) => setEntryForm({ ...entryForm, covered: e.target.checked })}
-            />
-            <span>Covered by Plan</span>
-          </label>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={entryForm.priorAuthRequired}
-              onChange={(e) => setEntryForm({ ...entryForm, priorAuthRequired: e.target.checked })}
-            />
-            <span>Prior Authorization Required</span>
-          </label>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={entryForm.stepTherapyRequired}
-              onChange={(e) => setEntryForm({ ...entryForm, stepTherapyRequired: e.target.checked })}
-            />
-            <span>Step Therapy Mandated</span>
-          </label>
-        </div>
-
-        <button type="submit" className="primary-button" style={{ marginTop: "1rem" }}>
-          Save Formulary Entry
-        </button>
-
-        {message && (
-          <div className="alert-banner success" style={{ marginTop: "1rem" }}>
-            ✓ {message}
+      {/* Steps 1 & 2: Dual Creation Pods */}
+      <div className="formulary-sub-row">
+        {/* Step 1: Add Insurance Plan */}
+        <div className="card formulary-card">
+          <div className="card-header-icon">
+            <span className="icon-circle">🛡️</span>
+            <div>
+              <h3>Step 1: Add Insurance Plan</h3>
+              <p className="card-subtitle">Register a commercial or Medicare payer</p>
+            </div>
           </div>
-        )}
-      </form>
+
+          <form onSubmit={submitPlan} className="admin-form">
+            <label>
+              <span>Payer Name</span>
+              <input
+                placeholder="e.g. Aetna, Blue Cross, UnitedHealthcare"
+                value={planForm.payerName}
+                onChange={(e) => setPlanForm({ ...planForm, payerName: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              <span>Plan Name</span>
+              <input
+                placeholder="e.g. Choice POS II, Premier PPO"
+                value={planForm.planName}
+                onChange={(e) => setPlanForm({ ...planForm, planName: e.target.value })}
+                required
+              />
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "0.75rem" }}>
+              <label>
+                <span>Plan Type</span>
+                <input
+                  placeholder="e.g. HMO, PPO, Part D"
+                  value={planForm.planType}
+                  onChange={(e) => setPlanForm({ ...planForm, planType: e.target.value })}
+                />
+              </label>
+              <label>
+                <span>State</span>
+                <input
+                  placeholder="e.g. TX, CA, US"
+                  value={planForm.state}
+                  onChange={(e) => setPlanForm({ ...planForm, state: e.target.value })}
+                />
+              </label>
+            </div>
+
+            <button type="submit" className="primary-button" style={{ width: "100%", marginTop: "0.5rem" }}>
+              Register Plan
+            </button>
+
+            {planSuccess && (
+              <div className="alert-banner success" style={{ marginTop: "0.85rem" }}>
+                <div>✓ Created plan <strong>"{planSuccess.name}"</strong></div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "0.4rem" }}>
+                  <code style={{ fontSize: "0.75rem" }}>{planSuccess.id}</code>
+                  <button
+                    type="button"
+                    className="action-btn btn-enable"
+                    style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}
+                    onClick={() => setEntryForm({ ...entryForm, planId: planSuccess.id })}
+                  >
+                    👉 Insert in Step 3
+                  </button>
+                </div>
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* Step 2: Add Medication */}
+        <div className="card formulary-card">
+          <div className="card-header-icon">
+            <span className="icon-circle">💊</span>
+            <div>
+              <h3>Step 2: Add Medication</h3>
+              <p className="card-subtitle">Register brand, generic, and drug class</p>
+            </div>
+          </div>
+
+          <form onSubmit={submitMed} className="admin-form">
+            <label>
+              <span>Medication Brand / Name</span>
+              <input
+                placeholder="e.g. Ozempic 2mg/3mL Pen, Lipitor 20mg"
+                value={medForm.name}
+                onChange={(e) => setMedForm({ ...medForm, name: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              <span>Therapeutic Drug Class</span>
+              <input
+                placeholder="e.g. GLP-1 Agonist, Statin, DOAC"
+                value={medForm.drugClass}
+                onChange={(e) => setMedForm({ ...medForm, drugClass: e.target.value })}
+              />
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              <label>
+                <span>Generic Name</span>
+                <input
+                  placeholder="e.g. Semaglutide, Atorvastatin"
+                  value={medForm.genericName}
+                  onChange={(e) => setMedForm({ ...medForm, genericName: e.target.value })}
+                />
+              </label>
+              <label>
+                <span>Strength / Form</span>
+                <input
+                  placeholder="e.g. 2mg/3mL Pen, 20mg Tab"
+                  value={medForm.strength}
+                  onChange={(e) => setMedForm({ ...medForm, strength: e.target.value })}
+                />
+              </label>
+            </div>
+
+            <button type="submit" className="primary-button" style={{ width: "100%", marginTop: "0.5rem" }}>
+              Register Medication
+            </button>
+
+            {medSuccess && (
+              <div className="alert-banner success" style={{ marginTop: "0.85rem" }}>
+                <div>✓ Created medication <strong>"{medSuccess.name}"</strong></div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "0.4rem" }}>
+                  <code style={{ fontSize: "0.75rem" }}>{medSuccess.id}</code>
+                  <button
+                    type="button"
+                    className="action-btn btn-enable"
+                    style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}
+                    onClick={() => setEntryForm({ ...entryForm, medicationId: medSuccess.id })}
+                  >
+                    👉 Insert in Step 3
+                  </button>
+                </div>
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
+
+      {/* Step 3: Link Formulary Rule Hero Card */}
+      <div className="card formulary-hero-card">
+        <div className="card-header-icon">
+          <span className="icon-circle">🔗</span>
+          <div>
+            <h3>Step 3: Link Formulary Rule & Cost Sharing</h3>
+            <p className="card-subtitle">Connect plan and drug with tier ranking, patient copay, and policy mandates</p>
+          </div>
+        </div>
+
+        <form onSubmit={submitEntry} className="formulary-rule-form">
+          <div className="formulary-inputs-grid">
+            <label>
+              <span>Target Plan ID</span>
+              <input
+                placeholder="e.g. manual_aetna_choice_pos_ii"
+                value={entryForm.planId}
+                onChange={(e) => setEntryForm({ ...entryForm, planId: e.target.value })}
+                required
+              />
+            </label>
+
+            <label>
+              <span>Target Medication ID</span>
+              <input
+                placeholder="e.g. manual_ozempic_2mg_3ml_pen"
+                value={entryForm.medicationId}
+                onChange={(e) => setEntryForm({ ...entryForm, medicationId: e.target.value })}
+                required
+              />
+            </label>
+
+            <label>
+              <span>Formulary Tier Ranking</span>
+              <select
+                value={entryForm.tier}
+                onChange={(e) => setEntryForm({ ...entryForm, tier: e.target.value })}
+              >
+                {TIERS.map((t) => (
+                  <option key={t.key} value={t.key}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span>Estimated Patient Copay ($)</span>
+              <input
+                type="number"
+                step="0.01"
+                placeholder="e.g. 15.00 or 45.00"
+                value={entryForm.estimatedCopayCents}
+                onChange={(e) => setEntryForm({ ...entryForm, estimatedCopayCents: e.target.value })}
+              />
+            </label>
+          </div>
+
+          {/* Toggle Switches for Coverage & Requirements */}
+          <div className="policy-toggles-grid">
+            <label className={`toggle-card ${entryForm.covered ? "toggle-active" : ""}`}>
+              <input
+                type="checkbox"
+                checked={entryForm.covered}
+                onChange={(e) => setEntryForm({ ...entryForm, covered: e.target.checked })}
+              />
+              <div className="toggle-info">
+                <strong>{entryForm.covered ? "✅ Covered by Plan" : "❌ Not Covered"}</strong>
+                <span>Medication is approved under plan formulary</span>
+              </div>
+            </label>
+
+            <label className={`toggle-card ${entryForm.priorAuthRequired ? "toggle-warn" : ""}`}>
+              <input
+                type="checkbox"
+                checked={entryForm.priorAuthRequired}
+                onChange={(e) => setEntryForm({ ...entryForm, priorAuthRequired: e.target.checked })}
+              />
+              <div className="toggle-info">
+                <strong>{entryForm.priorAuthRequired ? "⚠️ Prior Auth (PA) Required" : "✓ No Prior Auth Required"}</strong>
+                <span>Physician clinical paperwork review needed</span>
+              </div>
+            </label>
+
+            <label className={`toggle-card ${entryForm.stepTherapyRequired ? "toggle-warn" : ""}`}>
+              <input
+                type="checkbox"
+                checked={entryForm.stepTherapyRequired}
+                onChange={(e) => setEntryForm({ ...entryForm, stepTherapyRequired: e.target.checked })}
+              />
+              <div className="toggle-info">
+                <strong>{entryForm.stepTherapyRequired ? "⚠️ Step Therapy (ST) Mandated" : "✓ No Step Therapy Mandated"}</strong>
+                <span>First-line generic trial required before approval</span>
+              </div>
+            </label>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1.5rem" }}>
+            <button type="submit" className="primary-button" style={{ padding: "0.85rem 2rem" }}>
+              💾 Save Formulary Rule
+            </button>
+          </div>
+
+          {entrySuccess && (
+            <div className="alert-banner success" style={{ marginTop: "1.25rem" }}>
+              ✓ {entrySuccess}
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
