@@ -4,6 +4,7 @@ import { Layout } from "./Layout";
 import { Login } from "./pages/Login";
 import { Lookup } from "./pages/Lookup";
 import { Admin } from "./pages/Admin";
+import { About } from "./pages/About";
 
 function ProtectedRoute({ children, roles }: { children: JSX.Element; roles?: string[] }) {
   const { user, loading } = useAuth();
@@ -25,6 +26,7 @@ export function App() {
         }
       >
         <Route path="/" element={<Lookup />} />
+        <Route path="/about" element={<About />} />
         <Route
           path="/admin"
           element={

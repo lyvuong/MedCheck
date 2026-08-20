@@ -1,12 +1,18 @@
-# 🏥 MedCheck
+<p align="center">
+  <img src="docs/assets/medcheck_banner.jpg" alt="MedCheck Banner" width="100%" style="border-radius: 12px;" />
+</p>
 
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
-[![Firebase](https://img.shields.io/badge/Firebase-Firestore%20%7C%20Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
-[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://pages.cloudflare.com/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+# 🏥 MedCheck — Instant Medication Coverage Lookup
+
+<p align="left">
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" /></a>
+  <a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps"><img src="https://img.shields.io/badge/PWA-Ready-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white" alt="PWA" /></a>
+  <a href="https://firebase.google.com/"><img src="https://img.shields.io/badge/Firebase-Firestore%20%7C%20Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase" /></a>
+  <a href="https://pages.cloudflare.com/"><img src="https://img.shields.io/badge/Cloudflare-Pages-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" /></a>
+</p>
 
 An installable, zero-backend Progressive Web App (PWA) that empowers doctors, medical staff, and care coordinators to instantly check medication coverage under patient insurance plans. MedCheck surfaces formulary tiers, prior authorization (PA) flags, step therapy requirements, estimated patient out-of-pocket costs, and intelligent covered alternatives.
 
@@ -25,8 +31,9 @@ Designed to operate **100% on free tiers** (Firebase Spark Plan + Cloudflare Pag
 - [How to Use MedCheck](#-how-to-use-medcheck)
   - [1. Clinician & Staff Workflow (Coverage Lookup)](#1-clinician--staff-workflow-coverage-lookup)
   - [2. Finding Covered Alternatives](#2-finding-covered-alternatives)
-  - [3. Administrator Workflow (User & Formulary Management)](#3-administrator-workflow-user--formulary-management)
-  - [4. Installing MedCheck as a PWA](#4-installing-medcheck-as-a-pwa)
+  - [3. Manual Data Entry Workflow (Staff & Admin)](#3-manual-data-entry-workflow-staff--admin)
+  - [4. User Management Workflow (Admin Only)](#4-user-management-workflow-admin-only)
+  - [5. Installing MedCheck as a PWA](#5-installing-medcheck-as-a-pwa)
 - [Authentication & Role-Based Access Control (RBAC)](#-authentication--role-based-access-control-rbac)
 - [Developer Quick Start](#-developer-quick-start)
   - [Prerequisites](#prerequisites)
@@ -192,29 +199,97 @@ When a drug is **Not Covered** or sits on a high tier (e.g., Tier 3+ or specialt
 2. MedCheck automatically queries all other medications in the same therapeutic `drugClass` on that insurance plan.
 3. Review available lower-tier alternatives along with their tier badge and estimated copay to help discuss cost-effective options with the patient.
 
-### 3. Administrator Workflow (User & Formulary Management)
+### 3. Manual Data Entry Workflow (Staff & Admin)
 
-Users with the `ADMIN` role have access to the **Admin** navigation tab:
+Clinic staff, medical assistants, or practice administrators can enter or update insurance plans, medications, and formulary coverage rules in under 60 seconds directly through the web UI:
 
-#### Managing Users
-1. Go to **Admin > Users**.
-2. In the **Grant access** form:
-   - Enter the team member's Google email address.
+```text
+┌─────────────────────────┐     ┌─────────────────────────┐
+│   1. Add Insurance Plan │     │   2. Add Medication     │
+│   (e.g., Aetna Choice)  │     │   (e.g., Ozempic 2mg)   │
+└───────────┬─────────────┘     └────────────┬────────────┘
+            │ [Plan ID]                      │ [Medication ID]
+            └───────────────┬────────────────┘
+                            ▼
+            ┌───────────────────────────────┐
+            │   3. Set Formulary Entry      │
+            │   - Tier (1–5 or Not Covered) │
+            │   - Prior Auth / Step Therapy │
+            │   - Estimated Copay ($)       │
+            └───────────────┬───────────────┘
+                            ▼
+            ┌───────────────────────────────┐
+            │   4. Live in Real-Time Search │
+            └───────────────────────────────┘
+```
+
+#### Step 1: Open the Formulary Entry Screen
+- Sign in with an authorized **Staff** or **Admin** Google account.
+- Click **Admin** in the top navigation bar, then select the **Formulary entry** tab.
+
+#### Step 2: Add an Insurance Plan
+If the patient's insurance plan is not already in the database:
+1. In the **"Add insurance plan"** card, enter:
+   - **Payer Name**: e.g., `Aetna`, `Blue Cross Blue Shield`, `UnitedHealthcare`, `Kaiser Permanente`.
+   - **Plan Name**: e.g., `Choice POS II`, `Silver Select EPO`, `Preferred Medicare Advantage`.
+   - **Plan Type**: e.g., `PPO`, `HMO`, `EPO`, `Part D`.
+2. Click **Add plan**.
+3. *System Confirmation*: A success alert displays the generated **Plan ID** (e.g., `Created plan "Choice POS II" (id: manual_aetna_choice_pos_ii)`). Copy or note this ID.
+
+#### Step 3: Add a Medication
+If the medication is not yet in the system:
+1. In the **"Add medication"** card, enter:
+   - **Name**: Full display name, e.g., `Ozempic 2mg/3mL Pen`, `Lipitor 20mg Tablet`, `Eliquis 5mg`.
+   - **Drug Class**: e.g., `GLP-1 Receptor Agonist`, `Statin`, `DOAC`.
+     > 💡 **Tip**: Adding an accurate therapeutic `drugClass` enables MedCheck to recommend this medication as an alternative when other drugs in the same class are non-covered!
+   - **Strength**: e.g., `20mg`, `2mg/3mL`, `5mg`.
+2. Click **Add medication**.
+3. *System Confirmation*: A success alert displays the generated **Medication ID** (e.g., `Created medication "Ozempic 2mg/3mL Pen" (id: manual_ozempic_2mg_3ml_pen)`). Copy or note this ID.
+
+#### Step 4: Set the Formulary Rule (Link Plan + Medication)
+1. In the **"Set formulary entry"** card:
+   - **Plan ID**: Enter the Plan ID from Step 2.
+   - **Medication ID**: Enter the Medication ID from Step 3.
+   - **Tier**: Select from the dropdown:
+     - `TIER_1_PREFERRED_GENERIC` (lowest cost)
+     - `TIER_2_GENERIC`
+     - `TIER_3_PREFERRED_BRAND`
+     - `TIER_4_NON_PREFERRED_DRUG`
+     - `TIER_5_SPECIALTY` (high-cost biologics/complex drugs)
+     - `NOT_COVERED`
+   - **Policy Checkboxes**:
+     - ☑️ **Covered**: Check if the plan covers this drug.
+     - ☑️ **Prior authorization required**: Check if prior authorization (`PA`) paperwork is needed.
+     - ☑️ **Step therapy required**: Check if trial on alternative drugs is mandated first.
+   - **Estimated Copay ($)**: Enter expected patient copay amount (e.g., `15.00` or `45.00`).
+2. Click **Save entry**.
+
+#### Step 5: Instant Real-Time Lookup
+- Click **MedCheck** in the top navigation bar to return to the **Lookup** screen.
+- Search for the medication and plan you just added.
+- The entry is immediately searchable live, with all tier badges, cost estimates, and clinical requirement flags visible.
+
+---
+
+### 4. User Management Workflow (Admin Only)
+
+Administrators manage user onboarding and permission tiers directly from **Admin > Users**:
+
+1. **Grant Access**:
+   - Enter the staff member's Google email address.
    - Enter their display name.
    - Select their role:
-     - **`DOCTOR`**: Can perform lookups and view covered alternatives.
-     - **`STAFF`**: Can perform lookups and manually create/edit plans, drugs, and formulary entries.
-     - **`ADMIN`**: Full permissions including user provisioning and activation toggles.
-3. Click **Grant access**. The user can now sign in immediately using that Google account.
-4. Existing users can be deactivated or reactivated instantly using the **Deactivate / Reactivate** toggle.
+     - **`DOCTOR`**: Can search medications and view covered alternatives.
+     - **`STAFF`**: Full lookup access plus manual plan, drug, and formulary entry creation.
+     - **`ADMIN`**: Full system permissions including user provisioning and activation toggles.
+   - Click **Grant access**. The user can sign in immediately with that Google account.
+2. **Deactivate / Reactivate Users**:
+   - View the live list of users in the **Existing users** table.
+   - Click **Disable** to instantly revoke a user's Firestore access without deleting their historical audit logs, or **Enable** to restore access.
 
-#### Manual Formulary Data Entry
-1. Go to **Admin > Formulary entry**.
-2. **Add a Health Plan**: Enter the Payer Name, Plan Name, Plan Type (HMO, PPO, Part D), and State.
-3. **Add a Medication**: Enter the brand/display name, generic name, NDC, therapeutic drug class, strength, and dosage form.
-4. **Create / Update Formulary Rules**: Link any plan to any medication, selecting coverage status, tier, prior auth / step therapy flags, quantity limits, and copay/coinsurance amounts.
+---
 
-### 4. Installing MedCheck as a PWA
+### 5. Installing MedCheck as a PWA
 
 MedCheck includes a full Web App Manifest and Service Worker:
 - **Desktop (Chrome / Edge / Brave)**: Click the **Install** icon on the right side of the browser address bar, or go to *Menu > Install MedCheck*.
@@ -376,6 +451,8 @@ MedCheck/
 │   ├── package.json               # Frontend dependencies & scripts
 │   ├── tsconfig.json              # TypeScript configuration
 │   ├── vite.config.ts             # Vite build & PWA plugin config
+│   ├── scripts/
+│   │   └── bump-version.mjs       # Auto-bumps minor version number in package.json
 │   ├── src/
 │   │   ├── main.tsx               # Application entry point
 │   │   ├── App.tsx                # Route definitions & layout wrapping
@@ -384,10 +461,13 @@ MedCheck/
 │   │   ├── AuthContext.tsx        # Firebase Auth state & role resolution
 │   │   ├── firebase.ts            # Firebase client SDK initialization
 │   │   ├── styles.css             # Design tokens & responsive styles
+│   │   ├── utils/
+│   │   │   └── version.ts         # Injected version, build date, and git commit hash
 │   │   ├── pages/
 │   │   │   ├── Login.tsx          # Google Sign-In & unauthorized screen
 │   │   │   ├── Lookup.tsx         # Real-time drug & plan coverage lookup
-│   │   │   └── Admin.tsx          # User management & manual formulary entry
+│   │   │   ├── Admin.tsx          # User management & manual formulary entry
+│   │   │   └── About.tsx          # App info, release specs, build hash & credits
 │   │   └── data/                  # Firestore Client SDK data access layer
 │   │       ├── types.ts           # Core TypeScript data schemas
 │   │       ├── coverage.ts        # Coverage evaluation & alternative search

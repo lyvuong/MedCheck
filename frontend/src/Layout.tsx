@@ -10,9 +10,12 @@ export function Layout() {
     <div className="app-shell">
       <header className="topbar">
         <Link to="/" className="brand">
-          MedCheck
+          <img src="/logo.svg" alt="MedCheck Logo" className="brand-logo" />
+          <span>MedCheck</span>
         </Link>
         <nav>
+          <Link to="/">Lookup</Link>
+          <Link to="/about">About</Link>
           {(user?.role === "ADMIN" || user?.role === "STAFF") && <Link to="/admin">Admin</Link>}
         </nav>
         <div className="user-chip">

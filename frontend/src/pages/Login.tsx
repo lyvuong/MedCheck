@@ -45,6 +45,9 @@ export function Login() {
     <div className="centered-page">
       <ThemeToggle />
       <div className="card login-card">
+        <div className="login-logo-container">
+          <img src="/logo.svg" alt="MedCheck Logo" className="login-logo" />
+        </div>
         <h1>MedCheck</h1>
         <p className="subtitle">Medication coverage lookup</p>
         {error && <div className="error">{error}</div>}
