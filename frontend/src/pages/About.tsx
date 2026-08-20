@@ -56,7 +56,7 @@ export function About() {
 
   return (
     <div className="about-page">
-      {/* Hero Header Card */}
+      {/* Hero Header Card (Clean layout without the huge logo) */}
       <div className="card about-hero">
         <div className="about-hero-badge-row">
           <span className="badge badge-primary">Official Release</span>
@@ -64,19 +64,14 @@ export function About() {
           {BUILD_HASH && <span className="badge badge-hash">commit #{BUILD_HASH}</span>}
         </div>
 
-        <div className="about-hero-content">
-          <div className="about-hero-logo-box">
-            <img src="/logo.svg" alt="MedCheck Logo" className="about-hero-logo" />
-          </div>
-          <div className="about-hero-text">
-            <h1>MedCheck</h1>
-            <p className="about-subtitle">Point-of-Care Medication Coverage & Formulary Intelligence</p>
-            <p className="about-description">
-              An installable, zero-backend Progressive Web App empowering physicians, medical assistants, and care
-              coordinators to instantly check medication formulary tiers, prior authorization requirements, and covered
-              alternatives under patient insurance plans.
-            </p>
-          </div>
+        <div className="about-hero-text">
+          <h1>MedCheck</h1>
+          <p className="about-subtitle">Point-of-Care Medication Coverage & Formulary Intelligence</p>
+          <p className="about-description">
+            A modern Progressive Web Application for instant medication coverage lookup, formulary tier
+            determination, prior authorization alerting, and class-based covered alternative analysis under
+            patient health plans.
+          </p>
         </div>
 
         <div className="about-stats-row">
@@ -94,49 +89,65 @@ export function About() {
           </div>
           <div className="stat-card">
             <span className="stat-label">Infrastructure</span>
-            <span className="stat-value">100% Free Tiers</span>
+            <span className="stat-value">Cloudflare + Spark</span>
           </div>
         </div>
       </div>
 
-      {/* Developer & Credits Card */}
+      {/* Developer Information Section (Statements PWA Style) */}
       <div className="card about-section">
-        <h2>👥 Contributors & Development</h2>
-        <div className="about-dev-grid">
-          <div className="dev-card">
-            <div className="dev-avatar-box">
-              <span className="dev-avatar-text">LV</span>
+        <h2>👨‍💻 Developer Information</h2>
+
+        <div className="dev-profile-container">
+          <div className="dev-avatar-wrapper">
+            <div className="dev-avatar-ring">
+              <img
+                src="/avatar.png"
+                alt="Ly Vuong"
+                className="dev-avatar-img"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = "none";
+                }}
+              />
             </div>
-            <div className="dev-details">
-              <h3>Ly Vuong</h3>
-              <p className="dev-role">Creator & Lead Maintainer</p>
+            <span className="dev-active-badge" title="Active Developer">
+              ✓
+            </span>
+          </div>
+
+          <div className="dev-profile-info">
+            <div className="dev-profile-header">
+              <div>
+                <h3>Ly Vuong</h3>
+                <p className="dev-profile-subtitle">Creator & Lead Engineer</p>
+              </div>
+
               <a
                 href="https://github.com/lyvuong/MedCheck"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="link-button github-link"
+                className="github-btn"
               >
-                GitHub Repository ↗
+                <svg className="github-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                </svg>
+                <span>GitHub Repository</span>
+                <span>↗</span>
               </a>
             </div>
-          </div>
 
-          <div className="dev-card">
-            <div className="dev-avatar-box ai-box">
-              <span className="dev-avatar-text">AI</span>
-            </div>
-            <div className="dev-details">
-              <h3>Antigravity</h3>
-              <p className="dev-role">Google DeepMind — Technical AI Co-developer</p>
-              <p className="dev-desc">Architecture, TypeScript algorithms, security rules, and PWA design pairing.</p>
-            </div>
+            <p className="dev-profile-bio">
+              Engineered with a focus on privacy, rapid performance, and intuitive user experience. Built using
+              state-of-the-art web technologies and Google DeepMind agentic pairing to deliver a native app-like
+              experience across desktop and mobile devices.
+            </p>
           </div>
         </div>
       </div>
 
       {/* Key Capabilities */}
       <div className="card about-section">
-        <h2>✨ Core Capabilities</h2>
+        <h2>✨ Key Capabilities & Features</h2>
         <div className="features-grid">
           {KEY_FEATURES.map((f, i) => (
             <div key={i} className="feature-item">
@@ -168,7 +179,7 @@ export function About() {
 
       {/* Clinical Terminology Guide */}
       <div className="card about-section">
-        <h2>📚 Healthcare Terminology Quick Reference</h2>
+        <h2>📚 Healthcare Terminology Reference</h2>
         <div className="terminology-grid">
           {TERMINOLOGY.map((item, i) => (
             <div key={i} className="terminology-item">

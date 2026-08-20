@@ -15,7 +15,6 @@ export function Layout() {
         </Link>
         <nav>
           <Link to="/">Lookup</Link>
-          <Link to="/about">About</Link>
           {(user?.role === "ADMIN" || user?.role === "STAFF") && <Link to="/admin">Admin</Link>}
         </nav>
         <div className="user-chip">
@@ -39,6 +38,21 @@ export function Layout() {
       <main>
         <Outlet />
       </main>
+      <footer className="app-footer">
+        <div className="footer-content">
+          <span className="copyright-text">
+            © {new Date().getFullYear()} MedCheck · Created by Ly Vuong · MIT License
+          </span>
+          <Link to="/about" className="footer-info-link" title="About MedCheck & System Information">
+            <svg className="footer-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span>About & Info</span>
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }
