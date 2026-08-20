@@ -5,6 +5,7 @@
 # 🏥 MedCheck — Instant Medication Coverage Lookup
 
 <p align="left">
+  <a href="https://MedCheck.lv5.org"><img src="https://img.shields.io/badge/Live%20App-MedCheck.lv5.org-0284c7?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live App" /></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" /></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
   <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" /></a>
@@ -13,6 +14,8 @@
   <a href="https://pages.cloudflare.com/"><img src="https://img.shields.io/badge/Cloudflare-Pages-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" /></a>
 </p>
+
+> 🌐 **Live Web Application**: [https://MedCheck.lv5.org](https://MedCheck.lv5.org)
 
 An installable, zero-backend Progressive Web App (PWA) that empowers doctors, medical staff, and care coordinators to instantly check medication coverage under patient insurance plans. MedCheck surfaces formulary tiers, prior authorization (PA) flags, step therapy requirements, estimated patient out-of-pocket costs, and intelligent covered alternatives.
 
@@ -432,7 +435,7 @@ Deploy the frontend directly to Cloudflare Pages or Cloudflare Workers Static As
    - **Build output directory**: `dist`
 4. Add the six `VITE_FIREBASE_*` environment variables in the Cloudflare dashboard.
 5. Click **Save and Deploy**.
-6. **Important**: Add your custom Cloudflare domain (e.g., `https://medcheck.pages.dev`) to **Firebase Console > Authentication > Settings > Authorized domains** to allow Google Sign-In.
+6. **Important**: Add your custom domain (e.g., `https://MedCheck.lv5.org` and `https://<PROJECT>.pages.dev`) to **Firebase Console > Authentication > Settings > Authorized domains** to allow Google Sign-In.
 
 ---
 
