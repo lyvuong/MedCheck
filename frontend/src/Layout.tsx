@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Layout() {
   const { user, logout } = useAuth();
@@ -15,6 +16,7 @@ export function Layout() {
           {(user?.role === "ADMIN" || user?.role === "STAFF") && <Link to="/admin">Admin</Link>}
         </nav>
         <div className="user-chip">
+          <ThemeToggle />
           <span>{user?.name}</span>
           <button
             className="link-button"

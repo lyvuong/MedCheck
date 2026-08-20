@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import { ThemeToggle } from "../ThemeToggle";
 
 export function Login() {
   const { user, noAccess, login, logout } = useAuth();
@@ -27,6 +28,7 @@ export function Login() {
   if (noAccess) {
     return (
       <div className="centered-page">
+        <ThemeToggle />
         <div className="card login-card">
           <h1>MedCheck</h1>
           <p className="subtitle">You're signed in, but don't have access yet.</p>
@@ -41,6 +43,7 @@ export function Login() {
 
   return (
     <div className="centered-page">
+      <ThemeToggle />
       <div className="card login-card">
         <h1>MedCheck</h1>
         <p className="subtitle">Medication coverage lookup</p>

@@ -3,11 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#f8fafc" />
     <meta name="description" content="MedCheck — quickly check whether a medication is covered by a patient's insurance plan." />
     <link rel="icon" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>MedCheck</title>
+    <script>
+      // Applied before first paint (and before React) to avoid a flash of
+      // the wrong theme. Kept in sync afterwards by ThemeToggle.tsx.
+      (function () {
+        try {
+          var stored = localStorage.getItem("medcheck_theme");
+          var theme =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          if (stored) document.documentElement.setAttribute("data-theme", stored);
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute("content", theme === "dark" ? "#0b1220" : "#f8fafc");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
