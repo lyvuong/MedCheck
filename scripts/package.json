@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Local admin tooling (Firestore seed data, CMS bulk import) — run by hand with a Firebase service-account key. Not deployed anywhere.",
   "scripts": {
-    "seed": "tsx src/db/seed.ts",
-    "import:cms": "tsx src/providers/cms/importCli.ts"
+    "seed": "tsx --env-file=.env src/db/seed.ts",
+    "import:cms": "tsx --env-file=.env src/providers/cms/importCli.ts"
   },
   "dependencies": {
     "firebase-admin": "^14.3.0",

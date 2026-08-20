@@ -49,18 +49,20 @@ async function prefixQuery(field: string, q: string, limit: number) {
 }
 
 /**
- * Prefix-match only (no substring search — see insurancePlans.ts's
- * searchPlans for the same tradeoff). Also checks an exact NDC match
- * since NDC is the medication's doc ID when known.
+ * Prefix-match on name, generic name, or drug class (no substring search
+ * — see insurancePlans.ts's searchPlans for the same tradeoff). Also
+ * checks an exact NDC match since NDC is the medication's doc ID when
+ * known.
  */
 export async function searchMedications(q: string, limit = 20): Promise<Medication[]> {
-  const [byName, byGeneric, byNdc] = await Promise.all([
+  const [byName, byGeneric, byClass, byNdc] = await Promise.all([
     prefixQuery("nameLower", q, limit),
     prefixQuery("genericNameLower", q, limit),
+    prefixQuery("drugClassLower", q, limit),
     medicationsCol.doc(q).get(),
   ]);
   const seen = new Map<string, Medication>();
-  for (const d of [...byName, ...byGeneric]) {
+  for (const d of [...byName, ...byGeneric, ...byClass]) {
     if (!seen.has(d.id)) seen.set(d.id, fromDoc(d.id, d.data()));
   }
   if (byNdc.exists && !seen.has(byNdc.id)) {
@@ -89,6 +91,7 @@ export async function createManualMedication(input: {
     form: input.form ?? null,
     nameLower: input.name.toLowerCase(),
     genericNameLower: (input.genericName ?? "").toLowerCase(),
+    drugClassLower: (input.drugClass ?? "").toLowerCase(),
     createdAt,
   };
   await ref.set(data, { merge: true });
@@ -117,6 +120,7 @@ export async function upsertCmsMedication(input: {
     form: existingData?.form ?? null,
     nameLower: name.toLowerCase(),
     genericNameLower: (existingData?.genericName ?? "").toLowerCase(),
+    drugClassLower: (existingData?.drugClass ?? "").toLowerCase(),
     createdAt: existing.exists ? toDate(existingData!.createdAt) : new Date(),
   };
   await ref.set(data, { merge: true });
