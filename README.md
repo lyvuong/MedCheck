@@ -39,6 +39,7 @@ Designed to operate **100% on free tiers** (Firebase Spark Plan + Cloudflare Pag
   - [Importing Real CMS Public Formulary Data](#importing-real-cms-public-formulary-data)
 - [Deployment Guide (Cloudflare)](#-deployment-guide-cloudflare)
 - [Project Directory Structure](#-project-directory-structure)
+- [Contributors & Credits](#-contributors--credits)
 - [License](#-license)
 
 ---
@@ -407,6 +408,13 @@ MedCheck/
             ├── importCli.ts       # CLI entrypoint for CSV ingestion
             └── columnMapping.ts   # CSV header definitions & type parsers
 ```
+
+---
+
+## 👥 Contributors & Credits
+
+- **[Ly Vuong](https://github.com/lyvuong)** — Creator & Lead Maintainer
+- **Antigravity** (Google DeepMind) — AI Pair Programmer & Technical Co-developer
 
 ---
 
