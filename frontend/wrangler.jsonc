@@ -1,0 +1,19 @@
+{
+  // Set "name" to match the Worker/project name you already created in
+  // the Cloudflare dashboard — this is how Cloudflare Builds knows which
+  // deployment to update. Check Workers & Pages > your project for the
+  // exact name if unsure.
+  "name": "medcheck",
+  "compatibility_date": "2026-08-19",
+  "assets": {
+    // Relative to this file's location — with the dashboard's "Root
+    // directory" set to `frontend`, this resolves to frontend/dist,
+    // exactly where `npm run build` (vite build) writes its output.
+    "directory": "./dist/",
+    // Serves index.html (200 OK) for any request that doesn't match a
+    // built file, so React Router's client-side routes (e.g. /admin)
+    // work on a hard reload — this replaces the need for _redirects,
+    // which classic Cloudflare Pages used for the same purpose.
+    "not_found_handling": "single-page-application"
+  }
+}

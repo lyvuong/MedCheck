@@ -80,17 +80,25 @@ as a starting point and apply your own practice's policies accordingly.
    Staff/Doctors (they must sign in with the exact Google account whose
    email you enter).
 
-## Deploying (Cloudflare Pages)
+## Deploying (Cloudflare)
 
-Connect the GitHub repo in the Cloudflare Pages dashboard:
+Connect the GitHub repo via **Workers & Pages > Create > Connect to Git** in
+the Cloudflare dashboard. Depending on which flow the dashboard puts you in:
 
 - **Root directory**: `frontend`
 - **Build command**: `npm run build`
-- **Build output directory**: `dist`
 - **Environment variables**: the six `VITE_FIREBASE_*` values from
   `frontend/.env.example`
 
-Once deployed, add the Pages URL (and any custom domain) to **Firebase
+If you don't see a "Build output directory" field, your project landed in
+Cloudflare's newer **Workers with static assets** model — the output
+directory is instead read from [frontend/wrangler.jsonc](frontend/wrangler.jsonc)
+(`assets.directory`, already set to `./dist/`), not a dashboard field. Set
+`wrangler.jsonc`'s `"name"` to match whatever project name you gave it in
+the dashboard. If you do see a "Build output directory" field (classic
+Pages), set it to `dist`.
+
+Once deployed, add the deployed URL (and any custom domain) to **Firebase
 console > Authentication > Settings > Authorized domains** — Google
 Sign-In fails with `auth/unauthorized-domain` until you do this.
 
