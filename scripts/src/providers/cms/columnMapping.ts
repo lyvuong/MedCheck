@@ -1,35 +1,42 @@
 /**
  * CMS's "Prescription Drug Plan Formulary, Pharmacy Network, and Pricing
- * Information" files are public and free (no contract, no API key —
- * https://www.cms.gov/research-statistics-data-and-systems/files-for-order/nonidentifiabledatafiles/prescriptiondrugplanformularypharmacynetworkandpricinginformationfiles),
- * but they're distributed as large CSVs you download yourself after
- * accepting CMS's terms of use — there's no click-through API. They cover
- * Medicare Advantage / Part D plans and (separately) ACA Marketplace
- * issuers publish similar machine-readable formulary files under CMS
- * price-transparency rules. They do NOT cover employer/commercial group
- * plans.
+ * Information" files are public and free — get them from
+ * https://data.cms.gov (search "Medicare Part D Prescribers" category,
+ * then pick the "Monthly" or "Quarterly Prescription Drug Plan
+ * Formulary, Pharmacy Network, and Pricing Information" dataset, NOT the
+ * prescriber-utilization datasets in that same list). You review/accept
+ * CMS's "Agreement for Use" yourself — there's no click-through API.
+ * They're distributed as pipe (`|`) -delimited `.txt` files, not CSV,
+ * despite how they're often described — the importer auto-detects the
+ * delimiter either way. They cover Medicare Advantage / Part D plans;
+ * ACA Marketplace issuers publish formulary data separately, as JSON
+ * files per-issuer, in a completely different format this importer does
+ * not read. Neither covers employer/commercial group plans.
  *
- * Column names have varied slightly release to release. Rather than
- * hardcoding names that might not match the exact file you download,
- * this mapping is the one place to adjust them — open your CSV's header
- * row, compare, and edit the strings below before running `npm run
- * import:cms`.
+ * Column names have varied slightly release to release, and — important
+ * — the Basic Drugs Formulary file has NO plan identifier of its own.
+ * Plans and formularies link only through FORMULARY_ID (one formulary is
+ * commonly shared by several plans), not through CONTRACT_ID/PLAN_ID
+ * directly. importCli.ts builds that link in memory from the plan file
+ * before touching the formulary file. If CMS renames a column in a
+ * future release, this is the one place to fix it — open your file's
+ * header row, compare, and edit the strings below.
  */
 export const PLAN_FILE_COLUMNS = {
   contractId: "CONTRACT_ID",
   planId: "PLAN_ID",
   segmentId: "SEGMENT_ID",
   planName: "PLAN_NAME",
-  payerName: "ORG_NAME",
-  planType: "PLAN_TYPE",
+  payerName: "CONTRACT_NAME",
+  formularyId: "FORMULARY_ID",
   state: "STATE",
-  year: "CONTRACT_YEAR",
+  // No plan-type (HMO/PPO/...) column exists in this file at all —
+  // planType is left unset on import; backfill it by hand from the
+  // Admin panel if you want it.
 };
 
 export const FORMULARY_FILE_COLUMNS = {
-  contractId: "CONTRACT_ID",
-  planId: "PLAN_ID",
-  segmentId: "SEGMENT_ID",
+  formularyId: "FORMULARY_ID",
   ndc: "NDC",
   rxcui: "RXCUI",
   tierLevel: "TIER_LEVEL_VALUE",

@@ -1,0 +1,12 @@
+# One CONTRACT_NAME per line, exactly as it appears in the CMS plan
+# file's CONTRACT_NAME column (case-insensitive match). Lines starting
+# with # are ignored.
+#
+# Insurers file under their legal underwriting entity, not their brand
+# name, and that name often differs by state (e.g. Blue Cross Blue
+# Shield's licensee varies by region). Check your plan file's actual
+# CONTRACT_NAME values for your target state before writing this list —
+# don't guess. Copy this file to cms-import-payers.txt (gitignored) and
+# fill in your own.
+AETNA LIFE INSURANCE COMPANY
+HUMANA INSURANCE COMPANY
