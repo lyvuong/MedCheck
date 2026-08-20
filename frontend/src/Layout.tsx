@@ -20,9 +20,13 @@ export function Layout() {
         </nav>
         <div className="user-chip">
           <ThemeToggle />
-          <span>{user?.name}</span>
+          <div className="user-profile-badge">
+            <span>{user?.name || user?.email}</span>
+            {user?.role && <span className="user-role-tag">{user.role}</span>}
+          </div>
           <button
             className="link-button"
+            style={{ fontSize: "0.85rem" }}
             onClick={() => {
               logout();
               navigate("/login");

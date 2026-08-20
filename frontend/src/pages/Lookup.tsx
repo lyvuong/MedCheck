@@ -5,19 +5,54 @@ import { searchPlans } from "../data/insurancePlans";
 import { checkCoverage } from "../data/coverage";
 import type { CoverageCheckResult, InsurancePlan, Medication } from "../data/types";
 
+const TIER_SPECTRUM = [
+  {
+    tierKey: "TIER_1_PREFERRED_GENERIC",
+    tierClass: "tier-1",
+    label: "[TIER 1]",
+    title: "Preferred Generic",
+    costHint: "Low Copay (~$10)",
+    icon: "🛡️",
+  },
+  {
+    tierKey: "TIER_2_GENERIC",
+    tierClass: "tier-2",
+    label: "[TIER 2]",
+    title: "Preferred Brand",
+    costHint: "Mid Copay (~$35)",
+    icon: "🛡️",
+  },
+  {
+    tierKey: "TIER_3_PREFERRED_BRAND",
+    tierClass: "tier-3",
+    label: "[TIER 3]",
+    title: "Non-Preferred Brand",
+    costHint: "Higher Copay (~$70)",
+    icon: "🛡️",
+  },
+  {
+    tierKey: "TIER_4_NON_PREFERRED_DRUG",
+    tierClass: "tier-4",
+    label: "[TIER 4/5]",
+    title: "Specialty Drugs",
+    costHint: "Prior Auth Required",
+    icon: "🛡️",
+  },
+];
+
 const TIER_LABELS: Record<string, string> = {
-  TIER_1_PREFERRED_GENERIC: "Tier 1 — Preferred generic",
-  TIER_2_GENERIC: "Tier 2 — Generic",
-  TIER_3_PREFERRED_BRAND: "Tier 3 — Preferred brand",
-  TIER_4_NON_PREFERRED_DRUG: "Tier 4 — Non-preferred drug",
-  TIER_5_SPECIALTY: "Tier 5 — Specialty",
-  NOT_COVERED: "Not covered",
-  UNKNOWN: "Unknown",
+  TIER_1_PREFERRED_GENERIC: "Tier 1 — Preferred Generic",
+  TIER_2_GENERIC: "Tier 2 — Generic / Preferred",
+  TIER_3_PREFERRED_BRAND: "Tier 3 — Preferred Brand",
+  TIER_4_NON_PREFERRED_DRUG: "Tier 4 — Non-Preferred Drug",
+  TIER_5_SPECIALTY: "Tier 5 — Specialty Biologics",
+  NOT_COVERED: "Not Covered",
+  UNKNOWN: "Unknown Tier",
 };
 
 const SOURCE_LABELS: Record<string, string> = {
-  MANUAL: "Manually entered",
-  CMS_PUF: "CMS public formulary data",
+  MANUAL: "Manually Entered",
+  CMS_PUF: "CMS Public Formulary Data",
 };
 
 function useDebouncedSearch<T>(
@@ -42,7 +77,7 @@ function useDebouncedSearch<T>(
         .catch(() => {
           if (id === requestId.current) setResults([]);
         });
-    }, 250);
+    }, 200);
     return () => clearTimeout(handle);
   }, [query]);
 
@@ -84,29 +119,83 @@ export function Lookup() {
 
   return (
     <div className="lookup-page">
-      <h1>Check medication coverage</h1>
+      {/* Dashboard Top Header */}
+      <div className="dashboard-hero">
+        <div className="dashboard-header-row">
+          <div className="dashboard-title-box">
+            <h1>
+              <span>💊</span> Medication Coverage Dashboard
+            </h1>
+            <p>Real-time formulary tier determination, prior authorization checks, and alternative analysis</p>
+          </div>
+          <div className="dashboard-live-badge">
+            <span className="pulse-dot" />
+            <span>Formulary Engine Active</span>
+          </div>
+        </div>
+      </div>
 
+      {/* Dual Glassmorphic Search Pods */}
       <div className="search-grid">
-        <div className="search-field">
-          <label htmlFor="med-search">Medication</label>
-          <input
-            id="med-search"
-            placeholder="Search by name or NDC…"
-            value={selectedMed ? selectedMed.name : medQuery}
-            onChange={(e) => {
-              setSelectedMed(null);
-              setResult(null);
-              setMedQuery(e.target.value);
-            }}
-          />
+        {/* Medication Pod */}
+        <div className="search-pod">
+          <div className="search-pod-header">
+            <span className="search-pod-title">
+              <span>💊</span> Medication
+            </span>
+            {selectedMed && (
+              <button
+                className="link-button"
+                style={{ fontSize: "0.75rem" }}
+                onClick={() => {
+                  setSelectedMed(null);
+                  setResult(null);
+                  setMedQuery("");
+                }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="search-input-wrapper">
+            <span className="search-icon-badge">🔍</span>
+            <input
+              id="med-search"
+              placeholder="Search by brand name, generic, or NDC…"
+              value={selectedMed ? selectedMed.name : medQuery}
+              onChange={(e) => {
+                setSelectedMed(null);
+                setResult(null);
+                setMedQuery(e.target.value);
+              }}
+            />
+            {selectedMed && (
+              <button
+                className="clear-btn"
+                onClick={() => {
+                  setSelectedMed(null);
+                  setResult(null);
+                  setMedQuery("");
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
           {!selectedMed && medResults.length > 0 && (
             <ul className="suggestions">
               {medResults.map((m) => (
                 <li key={m.id}>
                   <button onClick={() => setSelectedMed(m)}>
-                    <strong>{m.name}</strong>
-                    {m.strength && <span className="muted"> · {m.strength}</span>}
-                    {m.drugClass && <span className="muted"> · {m.drugClass}</span>}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <strong>{m.name}</strong>
+                      {m.drugClass && <span className="drug-class-chip">{m.drugClass}</span>}
+                    </div>
+                    {(m.genericName || m.strength) && (
+                      <div className="muted" style={{ fontSize: "0.8rem", marginTop: "0.2rem" }}>
+                        {m.genericName} {m.strength && `· ${m.strength}`}
+                      </div>
+                    )}
                   </button>
                 </li>
               ))}
@@ -114,25 +203,63 @@ export function Lookup() {
           )}
         </div>
 
-        <div className="search-field">
-          <label htmlFor="plan-search">Insurance plan</label>
-          <input
-            id="plan-search"
-            placeholder="Search by payer or plan name…"
-            value={selectedPlan ? `${selectedPlan.payerName} — ${selectedPlan.planName}` : planQuery}
-            onChange={(e) => {
-              setSelectedPlan(null);
-              setResult(null);
-              setPlanQuery(e.target.value);
-            }}
-          />
+        {/* Insurance Plan Pod */}
+        <div className="search-pod">
+          <div className="search-pod-header">
+            <span className="search-pod-title">
+              <span>🛡️</span> Insurance Plan
+            </span>
+            {selectedPlan && (
+              <button
+                className="link-button"
+                style={{ fontSize: "0.75rem" }}
+                onClick={() => {
+                  setSelectedPlan(null);
+                  setResult(null);
+                  setPlanQuery("");
+                }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="search-input-wrapper">
+            <span className="search-icon-badge">📋</span>
+            <input
+              id="plan-search"
+              placeholder="Search by payer (e.g. Blue Cross, Aetna, Medicare)…"
+              value={selectedPlan ? `${selectedPlan.payerName} — ${selectedPlan.planName}` : planQuery}
+              onChange={(e) => {
+                setSelectedPlan(null);
+                setResult(null);
+                setPlanQuery(e.target.value);
+              }}
+            />
+            {selectedPlan && (
+              <button
+                className="clear-btn"
+                onClick={() => {
+                  setSelectedPlan(null);
+                  setResult(null);
+                  setPlanQuery("");
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
           {!selectedPlan && planResults.length > 0 && (
             <ul className="suggestions">
               {planResults.map((p) => (
                 <li key={p.id}>
                   <button onClick={() => setSelectedPlan(p)}>
-                    <strong>{p.payerName}</strong> — {p.planName}
-                    {p.planType && <span className="muted"> · {p.planType}</span>}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <strong>{p.payerName}</strong>
+                      {p.planType && <span className="drug-class-chip">{p.planType}</span>}
+                    </div>
+                    <div className="muted" style={{ fontSize: "0.8rem", marginTop: "0.2rem" }}>
+                      {p.planName} {p.state && `(${p.state})`}
+                    </div>
                   </button>
                 </li>
               ))}
@@ -141,67 +268,146 @@ export function Lookup() {
         </div>
       </div>
 
-      {checking && <p className="muted">Checking coverage…</p>}
+      {/* Interactive Formulary Tier Spectrum HUD */}
+      <div className="tier-spectrum-section">
+        <div className="spectrum-header">
+          <span className="spectrum-title">
+            <span>📊</span> Formulary Tier Spectrum
+          </span>
+          {result && (
+            <span className="muted" style={{ fontSize: "0.8rem", fontWeight: 700 }}>
+              Matched Tier: {TIER_LABELS[result.coverage.tier] ?? result.coverage.tier}
+            </span>
+          )}
+        </div>
+
+        <div className="tier-cards-grid">
+          {TIER_SPECTRUM.map((t, idx) => {
+            const isMatch =
+              result &&
+              (result.coverage.tier === t.tierKey ||
+                (t.tierKey === "TIER_4_NON_PREFERRED_DRUG" && result.coverage.tier === "TIER_5_SPECIALTY"));
+
+            return (
+              <div key={idx} className={`glow-tier-card ${t.tierClass} ${isMatch ? "active-match" : ""}`}>
+                {isMatch && <span className="active-match-tag">Active Match</span>}
+                <div className="tier-badge-pill">
+                  <span>{t.label}</span>
+                  <span>{t.icon}</span>
+                </div>
+                <div className="tier-card-title">{t.title}</div>
+                <div className="tier-card-cost">
+                  {isMatch && result?.coverage?.estimatedCost ? result.coverage.estimatedCost : t.costHint}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {checking && (
+        <div className="card" style={{ textAlign: "center", padding: "2rem" }}>
+          <span className="pulse-dot" style={{ display: "inline-block", margin: "0 auto 0.75rem" }} />
+          <p className="muted" style={{ margin: 0 }}>
+            Querying Firestore coverage repository…
+          </p>
+        </div>
+      )}
+
       {error && <div className="error">{error}</div>}
 
+      {/* Comprehensive Coverage HUD Result */}
       {result && (
-        <div className={`card result-card ${result.coverage.covered ? "covered" : "not-covered"}`}>
-          <div className="result-header">
-            <div>
+        <div className={`result-card-hud ${result.coverage.covered ? "covered" : "not-covered"}`}>
+          <div className="hud-header">
+            <div className="hud-title-area">
               <h2>{result.medication.name}</h2>
-              <p className="muted">
-                {result.plan.payerName} — {result.plan.planName}
-              </p>
+              <div className="hud-meta-row">
+                <span className="plan-name-badge">
+                  {result.plan.payerName} — {result.plan.planName}
+                </span>
+                {result.medication.drugClass && (
+                  <span className="drug-class-chip">Class: {result.medication.drugClass}</span>
+                )}
+              </div>
             </div>
-            <div className={`status-badge ${result.coverage.covered ? "status-covered" : "status-not-covered"}`}>
-              {result.coverage.covered ? "Covered" : "Not covered"}
+
+            <div className={`status-badge-lg ${result.coverage.covered ? "covered" : "not-covered"}`}>
+              <span>{result.coverage.covered ? "✅" : "❌"}</span>
+              <span>{result.coverage.covered ? "Covered" : "Not Covered"}</span>
             </div>
           </div>
 
-          <dl className="result-details">
-            <div>
-              <dt>Formulary tier</dt>
-              <dd>{TIER_LABELS[result.coverage.tier] ?? result.coverage.tier}</dd>
+          {/* 4-Metric Matrix */}
+          <div className="hud-metrics-grid">
+            <div className="metric-pod">
+              <span className="metric-label">Formulary Tier</span>
+              <span className="metric-value">{TIER_LABELS[result.coverage.tier] ?? result.coverage.tier}</span>
             </div>
-            {result.coverage.estimatedCost && (
-              <div>
-                <dt>Estimated patient cost</dt>
-                <dd>{result.coverage.estimatedCost}</dd>
-              </div>
-            )}
-            {result.coverage.quantityLimit && (
-              <div>
-                <dt>Quantity limit</dt>
-                <dd>{result.coverage.quantityLimit}</dd>
-              </div>
-            )}
-            <div>
-              <dt>Data source</dt>
-              <dd>{SOURCE_LABELS[result.coverage.source] ?? result.coverage.source}</dd>
-            </div>
-          </dl>
 
-          <div className="flags">
-            {result.coverage.priorAuthRequired && <span className="flag flag-warn">Prior authorization required</span>}
-            {result.coverage.stepTherapyRequired && <span className="flag flag-warn">Step therapy required</span>}
-            {!result.coverage.priorAuthRequired && !result.coverage.stepTherapyRequired && result.coverage.covered && (
-              <span className="flag flag-ok">No prior auth or step therapy on file</span>
+            <div className="metric-pod">
+              <span className="metric-label">Estimated Patient Cost</span>
+              <span className="metric-value" style={{ color: result.coverage.covered ? "var(--ok)" : "var(--bad)" }}>
+                {result.coverage.estimatedCost || (result.coverage.covered ? "Covered (Standard)" : "100% Out of Pocket")}
+              </span>
+            </div>
+
+            <div className="metric-pod">
+              <span className="metric-label">Quantity Limit</span>
+              <span className="metric-value">{result.coverage.quantityLimit || "No Limit on File"}</span>
+            </div>
+
+            <div className="metric-pod">
+              <span className="metric-label">Data Origin</span>
+              <span className="metric-value">{SOURCE_LABELS[result.coverage.source] ?? result.coverage.source}</span>
+            </div>
+          </div>
+
+          {/* Requirements & Policy Flags */}
+          <div className="flags-row">
+            {result.coverage.priorAuthRequired ? (
+              <span className="flag-badge warn">⚠️ Prior Authorization Required</span>
+            ) : (
+              <span className="flag-badge ok">✓ No Prior Auth Required</span>
+            )}
+
+            {result.coverage.stepTherapyRequired ? (
+              <span className="flag-badge warn">⚠️ Step Therapy Mandated</span>
+            ) : (
+              <span className="flag-badge ok">✓ No Step Therapy Mandate</span>
             )}
           </div>
 
-          {result.coverage.notes && <p className="muted">{result.coverage.notes}</p>}
+          {result.coverage.notes && (
+            <p className="muted" style={{ margin: "0.5rem 0 0", fontSize: "0.85rem" }}>
+              <strong>Clinical Notes:</strong> {result.coverage.notes}
+            </p>
+          )}
 
+          {/* Covered Alternatives Deck */}
           {result.alternatives.length > 0 && (
-            <div className="alternatives">
-              <h3>Covered alternatives ({result.medication.drugClass})</h3>
-              <ul>
+            <div className="alternatives-deck">
+              <div className="alternatives-header">
+                <h3>
+                  <span>🔄</span> Covered Alternatives in Class ({result.medication.drugClass})
+                </h3>
+              </div>
+
+              <div className="alternatives-grid">
                 {result.alternatives.map((alt) => (
-                  <li key={alt.id}>
-                    <strong>{alt.name}</strong> — {TIER_LABELS[alt.tier] ?? alt.tier}
-                    {alt.estimatedCost && <span className="muted"> · {alt.estimatedCost}</span>}
-                  </li>
+                  <div key={alt.id} className="alt-card">
+                    <div>
+                      <div className="alt-card-header">
+                        <span className="alt-name">{alt.name}</span>
+                        <span className="drug-class-chip" style={{ fontSize: "0.7rem" }}>
+                          {TIER_LABELS[alt.tier] ?? alt.tier}
+                        </span>
+                      </div>
+                      <div className="alt-cost">{alt.estimatedCost ? `Est. ${alt.estimatedCost}` : "Covered"}</div>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
         </div>
