@@ -324,10 +324,12 @@ export function Lookup() {
               <h2>{result.medication.name}</h2>
               <div className="hud-meta-row">
                 <span className="plan-name-badge">
-                  {result.plan.payerName} — {result.plan.planName}
+                  <span>🛡️</span> {result.plan.payerName} — {result.plan.planName}
                 </span>
                 {result.medication.drugClass && (
-                  <span className="drug-class-chip">Class: {result.medication.drugClass}</span>
+                  <span className="drug-class-chip">
+                    <span>🧬</span> Class: {result.medication.drugClass}
+                  </span>
                 )}
               </div>
             </div>
@@ -341,25 +343,33 @@ export function Lookup() {
           {/* 4-Metric Matrix */}
           <div className="hud-metrics-grid">
             <div className="metric-pod">
-              <span className="metric-label">Formulary Tier</span>
+              <span className="metric-label">
+                <span>🏷️</span> Formulary Tier
+              </span>
               <span className="metric-value">{TIER_LABELS[result.coverage.tier] ?? result.coverage.tier}</span>
             </div>
 
             <div className="metric-pod">
-              <span className="metric-label">Estimated Patient Cost</span>
+              <span className="metric-label">
+                <span>💰</span> Estimated Patient Cost
+              </span>
               <span className="metric-value" style={{ color: result.coverage.covered ? "var(--ok)" : "var(--bad)" }}>
                 {result.coverage.estimatedCost || (result.coverage.covered ? "Covered (Standard)" : "100% Out of Pocket")}
               </span>
             </div>
 
             <div className="metric-pod">
-              <span className="metric-label">Quantity Limit</span>
+              <span className="metric-label">
+                <span>📏</span> Quantity Limit
+              </span>
               <span className="metric-value">{result.coverage.quantityLimit || "No Limit on File"}</span>
             </div>
 
             <div className="metric-pod">
-              <span className="metric-label">Data Origin</span>
-              <span className="metric-value">{SOURCE_LABELS[result.coverage.source] ?? result.coverage.source}</span>
+              <span className="metric-label">
+                <span>🗂️</span> Data Origin
+              </span>
+              <span className="source-chip">{SOURCE_LABELS[result.coverage.source] ?? result.coverage.source}</span>
             </div>
           </div>
 
@@ -400,7 +410,7 @@ export function Lookup() {
                       <div className="alt-card-header">
                         <span className="alt-name">{alt.name}</span>
                         <span className="drug-class-chip" style={{ fontSize: "0.7rem" }}>
-                          {TIER_LABELS[alt.tier] ?? alt.tier}
+                          <span>🏷️</span> {TIER_LABELS[alt.tier] ?? alt.tier}
                         </span>
                       </div>
                       <div className="alt-cost">{alt.estimatedCost ? `Est. ${alt.estimatedCost}` : "Covered"}</div>

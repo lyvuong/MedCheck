@@ -1,6 +1,7 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
+import { ROLE_ICONS } from "./utils/roles";
 
 export function Layout() {
   const { user, logout } = useAuth();
@@ -21,7 +22,11 @@ export function Layout() {
           <ThemeToggle />
           <div className="user-profile-badge">
             <span>{user?.name || user?.email}</span>
-            {user?.role && <span className="user-role-tag">{user.role}</span>}
+            {user?.role && (
+              <span className="user-role-tag">
+                {ROLE_ICONS[user.role]} {user.role}
+              </span>
+            )}
           </div>
           <button
             className="link-button"

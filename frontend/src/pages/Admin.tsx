@@ -4,6 +4,7 @@ import { createManualMedication } from "../data/medications";
 import { upsertEntry } from "../data/formularyEntries";
 import { listUserRoleDocs, setUserRole, setUserActive } from "../data/users";
 import type { UserRole, UserRoleDoc } from "../data/types";
+import { ROLE_ICONS } from "../utils/roles";
 
 const TIERS = [
   { key: "TIER_1_PREFERRED_GENERIC", label: "Tier 1 — Preferred Generic (Lowest Copay)" },
@@ -115,9 +116,9 @@ function UsersPanel() {
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
             >
-              <option value="DOCTOR">Doctor (Coverage Lookup & Alternatives)</option>
-              <option value="STAFF">Staff (Lookup + Manual Formulary Entry)</option>
-              <option value="ADMIN">Admin (Full Control & User Management)</option>
+              <option value="DOCTOR">{ROLE_ICONS.DOCTOR} Doctor (Coverage Lookup & Alternatives)</option>
+              <option value="STAFF">{ROLE_ICONS.STAFF} Staff (Lookup + Manual Formulary Entry)</option>
+              <option value="ADMIN">{ROLE_ICONS.ADMIN} Admin (Full Control & User Management)</option>
             </select>
           </label>
 
@@ -183,7 +184,9 @@ function UsersPanel() {
                       <span className="user-email-text">{u.email}</span>
                     </td>
                     <td>
-                      <span className={`role-badge role-${u.role.toLowerCase()}`}>{u.role}</span>
+                      <span className={`role-badge role-${u.role.toLowerCase()}`}>
+                        {ROLE_ICONS[u.role]} {u.role}
+                      </span>
                     </td>
                     <td>
                       <span className={`status-pill ${u.active ? "active" : "disabled"}`}>
