@@ -467,6 +467,18 @@ button[type="submit"]:hover,
   padding: 1.25rem;
   box-shadow: var(--shadow-sm);
   position: relative;
+  /* backdrop-filter creates its own stacking context, which traps
+     .suggestions' z-index inside it — without this, the *next* pod
+     in DOM order (a sibling stacking context) paints over an open
+     dropdown regardless of the dropdown's own z-index. Raising the
+     whole pod above its siblings while it holds focus (i.e. its
+     dropdown is open) fixes that; this only matters when pods stack
+     vertically on mobile, since side-by-side pods never overlap. */
+  z-index: 1;
+}
+
+.search-pod:focus-within {
+  z-index: 10;
 }
 
 .search-pod-header {
